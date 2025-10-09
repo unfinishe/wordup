@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}{{ chapter.name }} - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>{{ chapter.name }}</h1>
+        <div class="language-pair">
+            <span>{{ chapter.source_language }}</span>
+            <i class="fas fa-exchange-alt"></i>
+            <span>{{ chapter.target_language }}</span>
+        </div>
+        <a href="{{ url_for('chapters.list_chapters') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Chapters
+        </a>
+    </div>
+
+    <div class="form">
+        <div class="stats-overview">
+            <div class="stat-card">
+                <i class="fas fa-cards-blank"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ stats.total_cards }}</span>
+                    <span class="stat-label">Total Cards</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ stats.due_cards }}</span>
+                    <span class="stat-label">Due for Review</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-chart-line"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ stats.success_rate }}%</span>
+                    <span class="stat-label">Success Rate</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-history"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ stats.total_reviews }}</span>
+                    <span class="stat-label">Total Reviews</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h3>Box Distribution (Leitner System)</h3>
+        </div>
+        <div class="box-distribution">
+            {% for box, count in stats.box_distribution.items() %}
+                <div class="box-stat">
+                    <span class="box-label">Box {{ box }}</span>
+                    <span class="box-count">{{ count }} cards</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('learning.start_session', chapter_id=chapter.id) }}" 
+               class="btn btn-success">
+                <i class="fas fa-play"></i> Start Learning Session
+                {% if stats.due_cards > 0 %}
+                    ({{ stats.due_cards }} due)
+                {% else %}
+                    (Practice Mode)
+                {% endif %}
+            </a>
+            <a href="{{ url_for('cards.list_cards', chapter_id=chapter.id) }}" 
+               class="btn btn-primary">
+                <i class="fas fa-cards-blank"></i> Manage Cards
+            </a>
+            <a href="{{ url_for('chapters.edit_chapter', chapter_id=chapter.id) }}" 
+               class="btn btn-outline">
+                <i class="fas fa-edit"></i> Edit Chapter
+            </a>
+            <form method="POST" action="{{ url_for('chapters.reset_chapter_stats', chapter_id=chapter.id) }}" 
+                  style="display: inline;">
+                <button type="submit" class="btn btn-warning" 
+                        onclick="return confirm('Reset all statistics for this chapter?')">
+                    <i class="fas fa-undo"></i> Reset Stats
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('chapters.delete_chapter', chapter_id=chapter.id) }}" 
+                  style="display: inline;">
+                <button type="submit" class="btn btn-danger" 
+                        onclick="return confirm('Delete this chapter and all its cards? This cannot be undone.')">
+                    <i class="fas fa-trash"></i> Delete Chapter
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    margin-bottom: 1rem;
+}
+
+.box-distribution {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.box-stat {
+    background: var(--bg-color);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.box-label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.box-count {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+    clear: both;
+}
+
+.form-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

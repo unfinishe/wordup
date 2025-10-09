@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1><i class="fas fa-cog"></i> Admin Dashboard</h1>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="admin-content">
+        <!-- Statistics Overview -->
+        <section class="admin-section">
+            <h2><i class="fas fa-chart-bar"></i> System Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-book"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ stats.total_chapters }}</span>
+                        <span class="stat-label">Total Chapters</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-cards-blank"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ stats.total_cards }}</span>
+                        <span class="stat-label">Total Cards</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-history"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ stats.total_reviews }}</span>
+                        <span class="stat-label">Total Reviews</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Export Section -->
+        <section class="admin-section">
+            <div class="section-header">
+                <h2><i class="fas fa-download"></i> Export Data</h2>
+                <p>Export your vocabulary data for backup or sharing purposes.</p>
+            </div>
+            
+            <div class="export-options">
+                <div class="export-card">
+                    <div class="export-header">
+                        <h3><i class="fas fa-file-archive"></i> Full Backup</h3>
+                        <p>Export all chapters, cards, and statistics as a ZIP file</p>
+                    </div>
+                    <div class="export-actions">
+                        <a href="{{ url_for('admin.export_all_data') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-download"></i> Download Full Backup
+                        </a>
+                    </div>
+                </div>
+
+                <div class="export-card">
+                    <div class="export-header">
+                        <h3><i class="fas fa-file-export"></i> Individual Chapters</h3>
+                        <p>Export specific chapters as JSON files</p>
+                    </div>
+                    <div class="chapter-export-list">
+                        {% if chapters %}
+                            {% for chapter in chapters %}
+                            <div class="chapter-export-item">
+                                <div class="chapter-info">
+                                    <strong>{{ chapter.name }}</strong>
+                                    <div class="language-pair">
+                                        <span>{{ chapter.source_language }}</span>
+                                        <i class="fas fa-exchange-alt"></i>
+                                        <span>{{ chapter.target_language }}</span>
+                                    </div>
+                                    <span class="card-count">{{ chapter.cards|length }} cards</span>
+                                </div>
+                                <a href="{{ url_for('admin.export_chapter', chapter_id=chapter.id) }}" 
+                                   class="btn btn-outline">
+                                    <i class="fas fa-download"></i> Export
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-chapters">
+                                <i class="fas fa-info-circle"></i>
+                                <p>No chapters available to export</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Import Section -->
+        <section class="admin-section">
+            <div class="section-header">
+                <h2><i class="fas fa-upload"></i> Import Data</h2>
+                <p>Import vocabulary data from JSON files or ZIP backups.</p>
+            </div>
+            
+            <div class="import-card">
+                <div class="import-info">
+                    <h3><i class="fas fa-file-import"></i> Import Chapters</h3>
+                    <p>Upload JSON files (single chapters) or ZIP files (multiple chapters) to import vocabulary data.</p>
+                    <div class="import-notes">
+                        <h4>Supported Formats:</h4>
+                        <ul>
+                            <li><strong>JSON files:</strong> Single chapter exports from WordUp</li>
+                            <li><strong>ZIP files:</strong> Full backups containing multiple chapters</li>
+                        </ul>
+                        <div class="import-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Note:</strong> Chapters with identical names and language pairs will be skipped to prevent duplicates.
+                        </div>
+                    </div>
+                </div>
+                <div class="import-actions">
+                    <a href="{{ url_for('admin.import_data') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-upload"></i> Import Data
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+.admin-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.admin-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-section:last-child {
+    border-bottom: none;
+}
+
+.admin-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.export-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.export-card, .import-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.export-header h3, .import-info h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.export-header p, .import-info p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.export-actions, .import-actions {
+    text-align: center;
+}
+
+.chapter-export-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.chapter-export-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chapter-export-item:last-child {
+    border-bottom: none;
+}
+
+.chapter-info strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.chapter-info .language-pair {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.card-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.no-chapters {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.import-notes {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.import-notes h4 {
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+}
+
+.import-notes ul {
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+}
+
+.import-notes li {
+    margin-bottom: 0.5rem;
+}
+
+.import-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 0.5rem;
+    color: #92400e;
+}
+
+@media (max-width: 768px) {
+    .export-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .chapter-export-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .chapter-export-item .btn {
+        align-self: stretch;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

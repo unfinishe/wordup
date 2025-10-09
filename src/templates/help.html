@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}Help - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>WordUp Help Guide</h1>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="help-content">
+        <section class="help-section">
+            <h2><i class="fas fa-rocket"></i> Getting Started</h2>
+            <div class="help-cards">
+                <div class="help-card">
+                    <h3>1. Create a Chapter</h3>
+                    <p>Organize your vocabulary by creating chapters (e.g., "Basic German", "Travel Phrases"). Each chapter represents a topic or lesson.</p>
+                </div>
+                <div class="help-card">
+                    <h3>2. Add Vocabulary Cards</h3>
+                    <p>Add word pairs with source word, translation, optional example sentences, and context hints. Use bulk import for faster entry.</p>
+                </div>
+                <div class="help-card">
+                    <h3>3. Start Learning</h3>
+                    <p>Begin learning sessions to practice your vocabulary. WordUp uses spaced repetition to optimize your learning.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-graduation-cap"></i> Learning Process</h2>
+            <div class="help-grid">
+                <div class="help-item">
+                    <h4>Learning Directions</h4>
+                    <ul>
+                        <li><strong>Source → Target:</strong> See foreign word, type translation</li>
+                        <li><strong>Target → Source:</strong> See native word, type foreign word</li>
+                        <li><strong>Random:</strong> Mix both directions for variety</li>
+                    </ul>
+                </div>
+                <div class="help-item">
+                    <h4>Practice Modes</h4>
+                    <ul>
+                        <li><strong>Due Cards:</strong> Review only cards scheduled for today</li>
+                        <li><strong>Practice Mode:</strong> Review any cards for extra practice</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-lightbulb"></i> Context Hints</h2>
+            <p class="intro-text">Add helpful context to your vocabulary cards for better understanding and memorization.</p>
+            
+            <div class="help-grid">
+                <div class="help-item">
+                    <h4>What are Context Hints?</h4>
+                    <p>Context hints are short descriptive notes that help you understand the relationship or nature of a word pair. They appear during learning sessions to provide additional context.</p>
+                    
+                    <div class="context-examples">
+                        <h5>Common Context Types:</h5>
+                        <ul>
+                            <li><strong>opposite</strong> - For antonyms (laut → quiet)</li>
+                            <li><strong>synonym</strong> - For similar meanings (schnell → fast)</li>
+                            <li><strong>formal</strong> - For formal language (Sie → you)</li>
+                            <li><strong>informal</strong> - For casual language (Hey → Hi)</li>
+                            <li><strong>plural</strong> - For plural forms (Bücher → books)</li>
+                            <li><strong>verb form</strong> - For specific conjugations (bin → am)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <h4>How to Use Context Hints</h4>
+                    <div class="context-steps">
+                        <ol>
+                            <li><strong>Creating Cards:</strong> Add hints in the "Context/Hint" field when creating or editing cards</li>
+                            <li><strong>Bulk Import:</strong> Include hints as the 4th column: <code>word | translation | example | hint</code></li>
+                            <li><strong>Learning:</strong> Hints appear automatically during practice sessions</li>
+                            <li><strong>Visual Design:</strong> Hints are displayed with a lightbulb icon in a subtle blue style</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="context-tips">
+                        <h5>💡 Tips for Effective Hints:</h5>
+                        <ul>
+                            <li>Keep hints short and descriptive</li>
+                            <li>Use consistent terminology across cards</li>
+                            <li>Focus on relationships or word properties</li>
+                            <li>Don't repeat information already in examples</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-brain"></i> The Leitner System</h2>
+            <p class="intro-text">WordUp uses the scientifically proven <strong>Leitner System</strong> for spaced repetition learning.</p>
+            
+            <div class="leitner-explanation">
+                <div class="leitner-visual">
+                    <div class="box-system">
+                        <div class="box box-1">
+                            <div class="box-header">Box 1</div>
+                            <div class="box-content">
+                                <div class="interval">Daily</div>
+                                <div class="description">New & difficult words</div>
+                            </div>
+                        </div>
+                        <div class="box box-2">
+                            <div class="box-header">Box 2</div>
+                            <div class="box-content">
+                                <div class="interval">3 Days</div>
+                                <div class="description">Learning progress</div>
+                            </div>
+                        </div>
+                        <div class="box box-3">
+                            <div class="box-header">Box 3</div>
+                            <div class="box-content">
+                                <div class="interval">1 Week</div>
+                                <div class="description">Getting familiar</div>
+                            </div>
+                        </div>
+                        <div class="box box-4">
+                            <div class="box-header">Box 4</div>
+                            <div class="box-content">
+                                <div class="interval">2 Weeks</div>
+                                <div class="description">Well known</div>
+                            </div>
+                        </div>
+                        <div class="box box-5">
+                            <div class="box-header">Box 5</div>
+                            <div class="box-content">
+                                <div class="interval">1 Month</div>
+                                <div class="description">Mastered</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="leitner-rules">
+                    <h4>How It Works:</h4>
+                    <ul>
+                        <li><strong>Correct Answer:</strong> Card moves to the next box (longer interval)</li>
+                        <li><strong>Wrong Answer:</strong> Card returns to Box 1 (daily review)</li>
+                        <li><strong>Optimal Timing:</strong> Cards are reviewed just before you forget them</li>
+                        <li><strong>Efficient Learning:</strong> Spend more time on difficult words, less on easy ones</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-chart-line"></i> Progress Tracking</h2>
+            <div class="help-grid">
+                <div class="help-item">
+                    <h4>Success Rate</h4>
+                    <p>Shows your accuracy percentage per chapter. Higher rates indicate better mastery.</p>
+                </div>
+                <div class="help-item">
+                    <h4>Box Distribution</h4>
+                    <p>Visual representation of how your cards are distributed across the 5 learning boxes.</p>
+                </div>
+                <div class="help-item">
+                    <h4>Due Cards</h4>
+                    <p>Number of cards scheduled for review today. Regular practice maintains your progress.</p>
+                </div>
+                <div class="help-item">
+                    <h4>Reset Stats</h4>
+                    <p>Reset chapter progress to start fresh or clear accumulated statistics.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-lightbulb"></i> Tips for Success</h2>
+            <div class="tips-grid">
+                <div class="tip">
+                    <i class="fas fa-calendar-day"></i>
+                    <h4>Daily Practice</h4>
+                    <p>Consistent daily sessions are more effective than long, infrequent study periods.</p>
+                </div>
+                <div class="tip">
+                    <i class="fas fa-edit"></i>
+                    <h4>Use Example Sentences</h4>
+                    <p>Add context to your cards with example sentences to improve understanding and retention.</p>
+                </div>
+                <div class="tip">
+                    <i class="fas fa-random"></i>
+                    <h4>Mix Directions</h4>
+                    <p>Practice both directions (source→target and target→source) for comprehensive learning.</p>
+                </div>
+                <div class="tip">
+                    <i class="fas fa-tasks"></i>
+                    <h4>Organize by Topics</h4>
+                    <p>Create focused chapters by theme, difficulty, or lesson to maintain structure.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="help-section">
+            <h2><i class="fas fa-info-circle"></i> About WordUp</h2>
+            <div class="copyright-section">
+                <div class="copyright-info">
+                    <h4>Copyright & License</h4>
+                    <p><strong>WordUp - A Vocabulary Trainer</strong><br>
+                    Copyright © 2025 Thomas Baumhauer</p>
+                    
+                    <p>This software is licensed under the <strong>MIT License</strong>. 
+                    You are free to use, modify, and distribute this software under the terms of the license.</p>
+                    
+                    <div class="educational-note">
+                        <h5><i class="fas fa-brain"></i> Educational Foundation</h5>
+                        <p>WordUp implements the <strong>Leitner Spaced Repetition System</strong>, 
+                        a scientifically proven learning technique developed by Sebastian Leitner 
+                        based on the principles of spaced repetition for effective memorization.</p>
+                    </div>
+                    
+                    <div class="acknowledgments">
+                        <h5><i class="fas fa-heart"></i> Acknowledgments</h5>
+                        <p>WordUp is built with open-source technologies including Flask, SQLAlchemy, 
+                        Font Awesome, and many other excellent libraries. Special thanks to the 
+                        language learning community for inspiration and feedback.</p>
+                    </div>
+                    
+                    <p class="version-info">
+                        <small><i class="fas fa-code"></i> 
+                        Developed with ❤️ for language learners worldwide</small>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+.help-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.help-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-section:last-child {
+    border-bottom: none;
+}
+
+.help-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.intro-text {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.help-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.help-card {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.help-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+}
+
+.help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.help-item h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+}
+
+.help-item ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.help-item li {
+    margin-bottom: 0.5rem;
+}
+
+.leitner-explanation {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.box-system {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.box {
+    flex: 1;
+    min-width: 120px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 2px solid;
+}
+
+.box-1 { border-color: #ef4444; }
+.box-2 { border-color: #f97316; }
+.box-3 { border-color: #eab308; }
+.box-4 { border-color: #22c55e; }
+.box-5 { border-color: #3b82f6; }
+
+.box-header {
+    padding: 0.5rem;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.box-1 .box-header { background: #ef4444; }
+.box-2 .box-header { background: #f97316; }
+.box-3 .box-header { background: #eab308; }
+.box-4 .box-header { background: #22c55e; }
+.box-5 .box-header { background: #3b82f6; }
+
+.box-content {
+    padding: 1rem 0.5rem;
+    text-align: center;
+    background: white;
+}
+
+.interval {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.description {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.leitner-rules h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.leitner-rules ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.leitner-rules li {
+    margin-bottom: 0.5rem;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.tip {
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.tip i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.tip h4 {
+    margin-bottom: 0.75rem;
+    color: var(--primary-color);
+}
+
+.tip p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .box-system {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .box {
+        min-width: auto;
+    }
+    
+    .box-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+    }
+    
+    .description {
+        text-align: right;
+    }
+}
+
+.context-examples {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.context-examples h5 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.context-examples ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.context-examples li {
+    margin-bottom: 0.5rem;
+}
+
+.context-steps {
+    margin: 1rem 0;
+}
+
+.context-steps ol {
+    padding-left: 1.25rem;
+}
+
+.context-steps li {
+    margin-bottom: 0.75rem;
+}
+
+.context-steps code {
+    background: var(--bg-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+
+.context-tips {
+    background: #f0f9ff;
+    border: 1px solid #0891b2;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.context-tips h5 {
+    color: #0891b2;
+    margin-bottom: 1rem;
+}
+
+.context-tips ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.context-tips li {
+    margin-bottom: 0.5rem;
+    color: #164e63;
+}
+
+/* Copyright section */
+.copyright-section {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.copyright-info h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.copyright-info p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.educational-note, .acknowledgments {
+    background: var(--bg-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+.educational-note h5, .acknowledgments h5 {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-info {
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1.5rem;
+}
+
+.version-info small {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

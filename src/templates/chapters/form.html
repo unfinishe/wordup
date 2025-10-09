@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if chapter %}Edit Chapter{% else %}New Chapter{% endif %} - WordUp
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>{% if chapter %}Edit Chapter{% else %}New Chapter{% endif %}</h1>
+        <a href="{{ url_for('chapters.list_chapters') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Chapters
+        </a>
+    </div>
+
+    <form method="POST" class="form">
+        <div class="form-group">
+            <label for="name">Chapter Name</label>
+            <input type="text" 
+                   id="name" 
+                   name="name" 
+                   value="{{ chapter.name if chapter else '' }}" 
+                   placeholder="e.g., Basic German Words"
+                   required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="source_language">Source Language</label>
+                <input type="text" 
+                       id="source_language" 
+                       name="source_language" 
+                       value="{{ chapter.source_language if chapter else '' }}" 
+                       placeholder="e.g., German"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="target_language">Target Language</label>
+                <input type="text" 
+                       id="target_language" 
+                       name="target_language" 
+                       value="{{ chapter.target_language if chapter else '' }}" 
+                       placeholder="e.g., English"
+                       required>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> 
+                {% if chapter %}Update Chapter{% else %}Create Chapter{% endif %}
+            </button>
+            <a href="{{ url_for('chapters.list_chapters') }}" class="btn btn-outline">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+# Git files
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+
+# Virtual environments
+.venv
+venv
+env
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+app.log
+
+# Development files
+.env
+.env.local
+.env.development
+
+# Documentation
+README.md
+docs/
+
+# Build artifacts
+build/
+dist/
+*.egg-info
+
+# Database files (will be created in volumes)
+instance/wordup.db
+data/*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/

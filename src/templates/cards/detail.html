@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}{{ card.source_word }} - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>Card Details</h1>
+        <a href="{{ url_for('cards.list_cards', chapter_id=card.chapter_id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Cards
+        </a>
+    </div>
+
+    <div class="form">
+        <div class="card-display">
+            <div class="card-pair-large">
+                <div class="source-section">
+                    <div class="language-label">{{ card.chapter.source_language }}</div>
+                    <div class="word-large">{{ card.source_word }}</div>
+                </div>
+                <div class="arrow-large">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+                <div class="target-section">
+                    <div class="language-label">{{ card.chapter.target_language }}</div>
+                    <div class="word-large">{{ card.target_word }}</div>
+                </div>
+            </div>
+
+            {% if card.context_hint %}
+                <div class="context-hint-large">
+                    <i class="fas fa-lightbulb"></i>
+                    {{ card.context_hint }}
+                </div>
+            {% endif %}
+
+            {% if card.example_sentence %}
+                <div class="example-large">
+                    <i class="fas fa-quote-left"></i>
+                    {{ card.example_sentence }}
+                </div>
+            {% endif %}
+
+            <div class="card-stats">
+                <div class="stat-item">
+                    <span class="label">Box Level:</span>
+                    <span class="value">{{ card.box_level }} / 5</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Next Review:</span>
+                    <span class="value {% if card.is_due() %}due{% endif %}">
+                        {% if card.is_due() %}
+                            Due Now
+                        {% else %}
+                            {{ card.next_review.strftime('%Y-%m-%d %H:%M') }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Created:</span>
+                    <span class="value">{{ card.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Reviews:</span>
+                    <span class="value">{{ card.reviews|length }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('cards.edit_card', card_id=card.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Card
+            </a>
+            <form method="POST" action="{{ url_for('cards.delete_card', card_id=card.id) }}" 
+                  style="display: inline;">
+                <button type="submit" class="btn btn-danger" 
+                        onclick="return confirm('Delete this card? This cannot be undone.')">
+                    <i class="fas fa-trash"></i> Delete Card
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-display {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.card-pair-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.source-section, .target-section {
+    flex: 1;
+}
+
+.language-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.word-large {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.source-section .word-large {
+    color: var(--primary-color);
+}
+
+.target-section .word-large {
+    color: var(--success-color);
+}
+
+.arrow-large {
+    font-size: 3rem;
+    color: var(--text-muted);
+}
+
+.context-hint-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 1.125rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.context-hint-large i {
+    font-size: 1rem;
+}
+
+.example-large {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    font-style: italic;
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.card-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: 0.5rem;
+}
+
+.stat-item .label {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.stat-item .value {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.stat-item .value.due {
+    color: var(--danger-color);
+}
+
+@media (max-width: 768px) {
+    .card-pair-large {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .arrow-large {
+        transform: rotate(90deg);
+    }
+    
+    .word-large {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}

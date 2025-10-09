@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - WordUp{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Welcome to WordUp</h1>
+        <div class="stats-overview">
+            <div class="stat-card">
+                <i class="fas fa-cards-blank"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ total_cards }}</span>
+                    <span class="stat-label">Total Cards</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ total_due }}</span>
+                    <span class="stat-label">Due for Review</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-folder"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ chapters|length }}</span>
+                    <span class="stat-label">Chapters</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chapters-section">
+        <div class="section-header">
+            <h2>Your Chapters</h2>
+            <a href="{{ url_for('chapters.new_chapter') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Chapter
+            </a>
+        </div>
+
+        {% if chapters %}
+            <div class="chapters-grid">
+                {% for chapter in chapters %}
+                    <div class="chapter-card">
+                        <div class="chapter-header">
+                            <h3>{{ chapter.name }}</h3>
+                            <div class="language-pair">
+                                <span>{{ chapter.source_language }}</span>
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>{{ chapter.target_language }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="chapter-stats">
+                            <div class="stat-row">
+                                <span>Cards:</span>
+                                <span>{{ chapter.total_cards }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Due:</span>
+                                {% if chapter.due_cards > 0 %}
+                                    <span class="due-count">{{ chapter.due_cards }}</span>
+                                {% else %}
+                                    <span>{{ chapter.due_cards }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="stat-row">
+                                <span>Success Rate:</span>
+                                <span class="success-rate">{{ chapter.success_rate }}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="chapter-actions">
+                            {% if chapter.due_cards > 0 %}
+                                <a href="{{ url_for('learning.start_session', chapter_id=chapter.id) }}" 
+                                   class="btn btn-success btn-sm">
+                                    <i class="fas fa-play"></i> Study Now
+                                </a>
+                            {% endif %}
+                            <a href="{{ url_for('chapters.view_chapter', chapter_id=chapter.id) }}" 
+                               class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ url_for('cards.list_cards', chapter_id=chapter.id) }}" 
+                               class="btn btn-outline btn-sm">
+                                <i class="fas fa-cards-blank"></i> Cards
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>No chapters yet</h3>
+                <p>Create your first chapter to start learning vocabulary! Use the "New Chapter" button above to get started.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Session - {{ chapter.name }} - WordUp{% endblock %}
+
+{% block content %}
+<div class="learning-container">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (progress / total * 100) }}%"></div>
+        <span class="progress-text">{{ progress }} / {{ total }}</span>
+    </div>
+
+    <div class="card-review">
+        <!-- Question Phase -->
+        <div id="question-phase">
+            <div class="language-indicator">{{ question_lang }}</div>
+            
+            <div class="question-card">
+                <div class="word">{{ question }}</div>
+                {% if card.context_hint %}
+                    <div class="context-hint">
+                        <i class="fas fa-lightbulb"></i> {{ card.context_hint }}
+                    </div>
+                {% endif %}
+                {% if card.example_sentence and direction == 'source_to_target' %}
+                    <div class="example">{{ card.example_sentence }}</div>
+                {% endif %}
+            </div>
+
+            <div class="translation-input">
+                <div class="language-indicator">{{ answer_lang }}</div>
+                <input type="text" id="user-answer" placeholder="Enter your translation..." 
+                       autocomplete="off" autofocus>
+                <button id="check-answer" class="btn btn-primary btn-lg" onclick="checkAnswer()">
+                    <i class="fas fa-check"></i> Check Answer
+                </button>
+            </div>
+        </div>
+
+        <!-- Answer Phase -->
+        <div id="answer-phase" style="display: none;">
+            <div class="result-display">
+                <div class="original-word-display">
+                    <div class="label">{{ question_lang }} Word:</div>
+                    <div class="original-word">{{ question }}</div>
+                </div>
+                
+                <div class="user-answer-display">
+                    <div class="label">Your Answer:</div>
+                    <div id="user-answer-text" class="user-answer"></div>
+                </div>
+                
+                <div class="correct-answer-display">
+                    <div class="label">Correct Answer:</div>
+                    <div class="correct-answer">{{ answer }}</div>
+                </div>
+                
+                {% if card.example_sentence %}
+                    <div class="example">{{ card.example_sentence }}</div>
+                {% endif %}
+            </div>
+
+            <div class="result-message" id="result-message">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <div class="review-actions">
+                <button class="btn btn-success btn-lg" onclick="continueToNext()">
+                    <i class="fas fa-arrow-right"></i> Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let isCorrect = false;
+const correctAnswer = '{{ answer }}';
+
+function checkAnswer() {
+    const userAnswer = document.getElementById('user-answer').value.trim();
+    const userAnswerLower = userAnswer.toLowerCase();
+    const correctAnswerLower = correctAnswer.toLowerCase();
+    
+    // Show user's answer
+    document.getElementById('user-answer-text').textContent = userAnswer;
+    
+    // Check if answer is correct (case-insensitive)
+    isCorrect = userAnswerLower === correctAnswerLower;
+    
+    // Show result message
+    const resultMessage = document.getElementById('result-message');
+    if (isCorrect) {
+        resultMessage.innerHTML = '<div class="result-correct"><i class="fas fa-check-circle"></i> Correct!</div>';
+        resultMessage.className = 'result-message correct';
+    } else {
+        resultMessage.innerHTML = '<div class="result-incorrect"><i class="fas fa-times-circle"></i> Not quite right</div>';
+        resultMessage.className = 'result-message incorrect';
+    }
+    
+    // Switch to answer phase
+    document.getElementById('question-phase').style.display = 'none';
+    document.getElementById('answer-phase').style.display = 'block';
+}
+
+function continueToNext() {
+    // Submit the result
+    submitAnswer(isCorrect);
+}
+
+function submitAnswer(correct) {
+    // Submit via AJAX
+    fetch('{{ url_for("learning.api_submit_answer") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            card_id: {{ card.id }},
+            correct: correct,
+            direction: '{{ direction }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Move to next card
+            window.location.href = '{{ url_for("learning.review_card") }}';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Fallback to form submission
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("learning.submit_answer") }}';
+        
+        const cardIdInput = document.createElement('input');
+        cardIdInput.type = 'hidden';
+        cardIdInput.name = 'card_id';
+        cardIdInput.value = '{{ card.id }}';
+        
+        const correctInput = document.createElement('input');
+        correctInput.type = 'hidden';
+        correctInput.name = 'correct';
+        correctInput.value = correct ? 'true' : 'false';
+        
+        const directionInput = document.createElement('input');
+        directionInput.type = 'hidden';
+        directionInput.name = 'direction';
+        directionInput.value = '{{ direction }}';
+        
+        form.appendChild(cardIdInput);
+        form.appendChild(correctInput);
+        form.appendChild(directionInput);
+        document.body.appendChild(form);
+        form.submit();
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    const questionPhase = document.getElementById('question-phase');
+    const answerPhase = document.getElementById('answer-phase');
+    
+    if (questionPhase.style.display !== 'none') {
+        // In question phase
+        if (event.code === 'Enter') {
+            event.preventDefault();
+            checkAnswer();
+        }
+    } else if (answerPhase.style.display !== 'none') {
+        // In answer phase  
+        if (event.code === 'Enter' || event.code === 'Space') {
+            event.preventDefault();
+            continueToNext();
+        }
+    }
+});
+
+// Focus input on load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('user-answer').focus();
+});
+</script>
+
+<style>
+.context-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    margin: 0.75rem 0;
+    font-style: italic;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.context-hint i {
+    font-size: 0.75rem;
+}
+
+.translation-input {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.translation-input input {
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem;
+    font-size: 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+}
+
+.translation-input input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.result-display {
+    margin-bottom: 2rem;
+}
+
+.original-word-display,
+.user-answer-display,
+.correct-answer-display {
+    margin-bottom: 1.5rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+}
+
+.original-word {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    padding: 1rem;
+    background: #f0f9ff;
+    border-radius: 0.75rem;
+    border: 2px solid var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.user-answer {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.correct-answer {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--success-color);
+    padding: 1rem;
+    background: #dcfce7;
+    border-radius: 0.75rem;
+    border: 2px solid var(--success-color);
+}
+
+.result-message {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.result-message.correct {
+    background: #dcfce7;
+    color: var(--success-color);
+    border: 2px solid var(--success-color);
+}
+
+.result-message.incorrect {
+    background: #fef2f2;
+    color: var(--danger-color);
+    border: 2px solid var(--danger-color);
+}
+
+.result-correct i,
+.result-incorrect i {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .translation-input input {
+        font-size: 1rem;
+    }
+    
+    .correct-answer {
+        font-size: 1.5rem;
+    }
+    
+    .result-message {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

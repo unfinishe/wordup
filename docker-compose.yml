@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  wordup:
+    build: .
+    container_name: wordup-app
+    ports:
+      - "5000:5000"
+    environment:
+      - WORDUP_HOST=0.0.0.0
+      - WORDUP_PORT=5000
+      - FLASK_DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:///data/wordup.db
+    volumes:
+      # Mount data directory for database persistence
+      - wordup_data:/app/data
+      # Alternative: Mount host directory
+      # - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  wordup_data:
+    driver: local
+
+# Alternative configuration for development
+# Uncomment the services below for development with live code reload
+# 
+# services:
+#   wordup-dev:
+#     build: .
+#     container_name: wordup-dev
+#     ports:
+#       - "5000:5000"
+#     environment:
+#       - WORDUP_HOST=0.0.0.0
+#       - WORDUP_PORT=5000
+#       - FLASK_DEBUG=true
+#       - SECRET_KEY=dev-secret-key
+#       - DATABASE_URL=sqlite:///data/wordup.db
+#     volumes:
+#       - .:/app  # Mount source code for live reload
+#       - wordup_dev_data:/app/data
+#     restart: unless-stopped
+# 
+# volumes:
+#   wordup_dev_data:
+#     driver: local

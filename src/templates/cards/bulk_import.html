@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Import - {{ chapter.name }} - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>Bulk Import Cards</h1>
+        <div class="language-pair">
+            <span>{{ chapter.source_language }}</span>
+            <i class="fas fa-exchange-alt"></i>
+            <span>{{ chapter.target_language }}</span>
+        </div>
+        <a href="{{ url_for('cards.list_cards', chapter_id=chapter.id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Cards
+        </a>
+    </div>
+
+    <div class="form">
+        <div class="import-instructions">
+            <h3>Import Format</h3>
+            <p>Enter your vocabulary cards, one per line, using this format:</p>
+            <code>{{ chapter.source_language }} word | {{ chapter.target_language }} translation | Example sentence (optional) | Context/Hint (optional)</code>
+            
+            <div class="example-format">
+                <strong>Examples:</strong><br>
+                <code>Hallo | Hello | Hallo, wie geht es dir?</code><br>
+                <code>Katze | Cat</code><br>
+                <code>laufen | to run | Ich laufe jeden Morgen im Park.</code><br>
+                <code>laut | quiet | Das Radio ist zu laut | opposite</code><br>
+                <code>schnell | fast | | synonym of quick</code>
+            </div>
+        </div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="text_data">Vocabulary Data</label>
+                <textarea id="text_data" name="text_data" rows="15" 
+                          placeholder="Enter your vocabulary cards here, one per line...
+Hallo | Hello | Hallo, wie geht es dir?
+Katze | Cat
+Hund | Dog | Der Hund bellt laut.
+laufen | to run | Ich laufe jeden Morgen."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Import Cards
+                </button>
+                <a href="{{ url_for('cards.list_cards', chapter_id=chapter.id) }}" class="btn btn-outline">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.import-instructions {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.import-instructions h3 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.import-instructions p {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+.import-instructions code {
+    background: var(--card-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+}
+
+.example-format {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.example-format code {
+    display: block;
+    margin: 0.25rem 0;
+    background: transparent;
+    padding: 0;
+}
+
+.form-group textarea {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

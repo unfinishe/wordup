@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if card %}Edit Card{% else %}New Card - {{ chapter.name }}{% endif %} - WordUp
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>{% if card %}Edit Card{% else %}New Card{% endif %}</h1>
+        <div class="language-pair">
+            {% if card %}
+                <span>{{ card.chapter.source_language }}</span>
+                <i class="fas fa-exchange-alt"></i>
+                <span>{{ card.chapter.target_language }}</span>
+            {% else %}
+                <span>{{ chapter.source_language }}</span>
+                <i class="fas fa-exchange-alt"></i>
+                <span>{{ chapter.target_language }}</span>
+            {% endif %}
+        </div>
+        <a href="{% if card %}{{ url_for('cards.list_cards', chapter_id=card.chapter_id) }}{% else %}{{ url_for('cards.list_cards', chapter_id=chapter.id) }}{% endif %}" 
+           class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Cards
+        </a>
+    </div>
+
+    <form method="POST" class="form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="source_word">
+                    {% if card %}{{ card.chapter.source_language }}{% else %}{{ chapter.source_language }}{% endif %} Word
+                </label>
+                <input type="text" id="source_word" name="source_word" 
+                       value="{{ card.source_word if card else '' }}" 
+                       placeholder="Enter word or phrase" required>
+            </div>
+
+            <div class="form-group">
+                <label for="target_word">
+                    {% if card %}{{ card.chapter.target_language }}{% else %}{{ chapter.target_language }}{% endif %} Translation
+                </label>
+                <input type="text" id="target_word" name="target_word" 
+                       value="{{ card.target_word if card else '' }}" 
+                       placeholder="Enter translation" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="context_hint">Context/Hint (Optional)</label>
+            <input type="text" id="context_hint" name="context_hint" 
+                   value="{{ card.context_hint if card else '' }}" 
+                   placeholder="e.g., opposite, synonym, formal, informal">
+            <small class="form-help">Add context like "opposite", "synonym", or other helpful hints</small>
+        </div>
+
+        <div class="form-group">
+            <label for="example_sentence">Example Sentence (Optional)</label>
+            <textarea id="example_sentence" name="example_sentence" rows="3" 
+                      placeholder="Enter an example sentence showing how the word is used">{{ card.example_sentence if card else '' }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> 
+                {% if card %}Update Card{% else %}Create Card{% endif %}
+            </button>
+            <a href="{% if card %}{{ url_for('cards.list_cards', chapter_id=card.chapter_id) }}{% else %}{{ url_for('cards.list_cards', chapter_id=chapter.id) }}{% endif %}" 
+               class="btn btn-outline">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

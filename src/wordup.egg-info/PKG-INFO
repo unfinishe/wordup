@@ -1,0 +1,46 @@
+Metadata-Version: 2.4
+Name: wordup
+Version: 0.1.0
+Summary: A vocabulary trainer with Spaced Repetition System
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: flask>=3.0.0
+Requires-Dist: flask-sqlalchemy>=3.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Provides-Extra: agent
+Requires-Dist: openai>=1.0.0; extra == "agent"
+Requires-Dist: requests>=2.31.0; extra == "agent"
+
+# WordUp - A Vocabulary Trainer
+
+This outlines the core features for **WordUp**, a dedicated vocabulary trainer designed to support users in effective language acquisition. The application's foundation is the scientifically proven **Spaced Repetition System (SRS)**.
+
+## Core Functionality
+
+### Voca-Card Management
+
+* **Multi-Language Support:** The application must support the definition and learning of vocabulary pairs across **multiple languages** (e.g., German ↔ English).
+* **Custom Input & Editing:** Users must be able to **enter, create, and fully edit** their own vocabulary entries (flashcards).
+* **Chapter Organization:** Vocabulary entries must be **organized and stored in custom-named chapters** (sets) for structured learning.
+* **Chapter Selection:** Users can **select specific chapters** to focus their current learning session.
+* **Contextual Example Sentences:** Users must be able to **input and display an example sentence** for each vocabulary entry to understand the word's usage in context.
+
+### Learning Process & Methods
+
+* **Spaced Repetition System (SRS):** The core learning process utilizes a **Flashcard Box System** (Leitner System or similar SRS algorithm) to ensure words are reviewed at optimal, increasing intervals for long-term retention.
+* **Directional Learning:** Users can choose the direction of the practice:
+    * **Foreign Language to Native Language**
+    * **Native Language to Foreign Language**
+    * **Random Direction** (Mixing both directions)
+
+### Progress Tracking
+
+* **Success Rate Display:** **Success Rates (0-100%)** are calculated and displayed per chapter, providing immediate feedback on mastery.
+* **Stats Management:** Users must be able to **reset** their progress statistics per chapter or for the entire language.
+* **Review Queue:** The application must clearly display the **count of words currently due for review** according to the SRS algorithm, encouraging the user to start a session.
+
+## Technical Specification
+- WordUp is written in Python, the project is managed via 'uv'
+- It's a web-based application and uses Flask as web framework
+- SQLITE is used as storage backend
+- WordUp can be packaged and shipped as Docker image. Path to SQL data directory can be mapped from host into the container.

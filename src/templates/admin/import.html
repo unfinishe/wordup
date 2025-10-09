@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Import Data - Admin - WordUp{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1><i class="fas fa-upload"></i> Import Data</h1>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Admin
+        </a>
+    </div>
+
+    <div class="form">
+        <div class="import-instructions">
+            <div class="instruction-card">
+                <h3><i class="fas fa-info-circle"></i> Import Instructions</h3>
+                <div class="instructions-content">
+                    <h4>Supported File Types:</h4>
+                    <ul>
+                        <li><strong>JSON Files (.json):</strong> Single chapter exports from WordUp</li>
+                        <li><strong>ZIP Files (.zip):</strong> Full backups containing multiple JSON chapter files</li>
+                    </ul>
+                    
+                    <h4>What Gets Imported:</h4>
+                    <ul>
+                        <li>Chapter information (name, source/target languages)</li>
+                        <li>Vocabulary cards (words, translations, example sentences)</li>
+                        <li>Learning progress (box levels, review schedules)</li>
+                        <li>Review history (past learning sessions and results)</li>
+                    </ul>
+                    
+                    <div class="import-notes">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Important Notes:</h4>
+                        <ul>
+                            <li>Chapters with identical names and language pairs will be <strong>skipped</strong> to prevent duplicates</li>
+                            <li>All imported data will be added to your existing vocabulary</li>
+                            <li>Review history will preserve original learning dates</li>
+                            <li>Large imports may take a few moments to process</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <form method="POST" enctype="multipart/form-data" class="upload-form">
+                <div class="file-upload-area" id="file-upload-area">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <h3>Choose File to Import</h3>
+                        <p>Drop your JSON or ZIP file here, or click to browse</p>
+                        <p class="file-types">Supported: .json, .zip (max 10MB)</p>
+                    </div>
+                    <input type="file" id="file" name="file" accept=".json,.zip" required>
+                </div>
+                
+                <div id="file-info" class="file-info" style="display: none;">
+                    <div class="selected-file">
+                        <i class="fas fa-file"></i>
+                        <span id="file-name"></span>
+                        <span id="file-size"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success btn-lg" id="import-btn" disabled>
+                        <i class="fas fa-upload"></i> Import Data
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="clearFileSelection()">
+                        <i class="fas fa-times"></i> Clear Selection
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="import-progress" id="import-progress" style="display: none;">
+            <div class="progress-content">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Importing Data...</h3>
+                <p>Please wait while we process your file. This may take a few moments.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const fileUploadArea = document.getElementById('file-upload-area');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const importBtn = document.getElementById('import-btn');
+    const importProgress = document.getElementById('import-progress');
+    const form = document.querySelector('.upload-form');
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileSelection);
+
+    // Drag and drop handlers
+    fileUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.add('drag-over');
+    });
+
+    fileUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.remove('drag-over');
+    });
+
+    fileUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelection();
+        }
+    });
+
+    // Click to browse
+    fileUploadArea.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        importProgress.style.display = 'block';
+        importBtn.disabled = true;
+    });
+
+    function handleFileSelection() {
+        const file = fileInput.files[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['application/json', 'application/zip', 'application/x-zip-compressed'];
+            const validExtensions = ['.json', '.zip'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                alert('Please select a valid JSON or ZIP file.');
+                clearFileSelection();
+                return;
+            }
+
+            // Validate file size (10MB limit)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB.');
+                clearFileSelection();
+                return;
+            }
+
+            // Show file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            importBtn.disabled = false;
+            
+            // Update upload area appearance
+            fileUploadArea.classList.add('file-selected');
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+});
+
+function clearFileSelection() {
+    const fileInput = document.getElementById('file');
+    const fileUploadArea = document.getElementById('file-upload-area');
+    const fileInfo = document.getElementById('file-info');
+    const importBtn = document.getElementById('import-btn');
+
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    importBtn.disabled = true;
+    fileUploadArea.classList.remove('file-selected');
+}
+</script>
+
+<style>
+.import-instructions {
+    margin-bottom: 2rem;
+}
+
+.instruction-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.instruction-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.instructions-content h4 {
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.instructions-content h4:first-child {
+    margin-top: 0;
+}
+
+.instructions-content ul {
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+}
+
+.instructions-content li {
+    margin-bottom: 0.5rem;
+}
+
+.import-notes {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.import-notes h4 {
+    color: #92400e;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.import-notes ul {
+    margin-bottom: 0;
+}
+
+.import-notes li {
+    color: #92400e;
+}
+
+.upload-section {
+    margin-bottom: 2rem;
+}
+
+.file-upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: var(--bg-color);
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background: var(--card-bg);
+}
+
+.file-upload-area.drag-over {
+    border-color: var(--primary-color);
+    background: var(--card-bg);
+    transform: scale(1.02);
+}
+
+.file-upload-area.file-selected {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+.file-upload-area input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.upload-text h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.upload-text p {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.file-types {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.file-info {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.selected-file {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-color);
+}
+
+.selected-file i {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.import-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.progress-content {
+    background: var(--card-bg);
+    padding: 3rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.progress-content i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.progress-content h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.progress-content p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .file-upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
