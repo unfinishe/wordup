@@ -12,6 +12,7 @@ services:
       - FLASK_DEBUG=false
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
       - DATABASE_URL=sqlite:///data/wordup.db
+      - APPLICATION_ROOT=/wordup  # Configure Flask for subpath
     volumes:
       # Mount data directory for database persistence
       - wordup_data:/app/data

@@ -39,6 +39,18 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Configure subpath support for reverse proxy
+    application_root = os.getenv('APPLICATION_ROOT', '/')
+    if application_root != '/':
+        app.config['APPLICATION_ROOT'] = application_root
+        # Ensure APPLICATION_ROOT ends with slash for proper URL generation
+        if not application_root.endswith('/'):
+            app.config['APPLICATION_ROOT'] = application_root + '/'
+    
+    # Add middleware for handling reverse proxy headers
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    
     # Initialize extensions
     from src.models import db
     db.init_app(app)

@@ -86,6 +86,9 @@ DATABASE_URL=sqlite:///data/wordup.db
 # Server configuration
 WORDUP_HOST=127.0.0.1
 WORDUP_PORT=5000
+
+# Reverse proxy / subpath configuration (optional)
+APPLICATION_ROOT=/wordup  # For serving at subpath like /wordup/
 ```
 
 ### Database Paths
@@ -173,6 +176,53 @@ The Docker setup includes:
 - Database: `/app/data/wordup.db` or `/app/instance/wordup.db`
 - Application: `/app`
 - Config: Environment variables (see `.env.docker`)
+
+### Reverse Proxy Setup (Nginx)
+
+WordUp can be deployed behind a reverse proxy for production use:
+
+**Environment Configuration:**
+```bash
+# For serving at a subpath (e.g., https://example.com/wordup/)
+APPLICATION_ROOT=/wordup
+
+# Other required settings
+WORDUP_HOST=0.0.0.0
+WORDUP_PORT=5000
+FLASK_DEBUG=false
+```
+
+**Nginx Configuration Example:**
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    location /wordup/ {
+        proxy_pass http://127.0.0.1:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Prefix /wordup;
+        proxy_redirect off;
+    }
+    
+    # Optional: serve static files directly
+    location /wordup/static/ {
+        proxy_pass http://127.0.0.1:5000/static/;
+        expires 1y;
+    }
+}
+```
+
+**Docker Compose with Nginx:**
+```bash
+# Use the provided nginx configuration
+docker-compose -f docker-compose.subpath.yml up -d
+
+# Access at: http://your-domain/wordup/
+```
 
 ## 🛠️ Development
 
