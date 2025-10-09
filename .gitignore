@@ -1,3 +1,8 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Development databases (example/test databases)
 data/
 *.sqlite
@@ -47,4 +52,6 @@ htmlcov/
 .tox/
 
 # Build artifacts from uv/pip
-*.egg-info/  # (This should be /*egg-info/ to catch all)
+*.egg-info/
+dist/
+build/

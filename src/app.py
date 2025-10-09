@@ -39,8 +39,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    print(f"Database path: {app.config['SQLALCHEMY_DATABASE_URI']}")  # Debug line
-    
     # Initialize extensions
     from src.models import db
     db.init_app(app)

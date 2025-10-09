@@ -37,7 +37,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+ 
+- Python 3.12+ 
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
 ### Installation

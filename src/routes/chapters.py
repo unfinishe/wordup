@@ -48,7 +48,10 @@ def new_chapter():
 @chapters_bp.route('/<int:chapter_id>')
 def view_chapter(chapter_id):
     """View chapter details"""
-    chapter = Chapter.query.get_or_404(chapter_id)
+    from sqlalchemy.orm import joinedload
+    chapter = Chapter.query.options(
+        joinedload(Chapter.cards).joinedload(VocabularyCard.reviews)
+    ).get_or_404(chapter_id)
     stats = SRSService.calculate_chapter_stats(chapter)
     
     return render_template('chapters/detail.html', chapter=chapter, stats=stats)
@@ -84,7 +87,10 @@ def delete_chapter(chapter_id):
 @chapters_bp.route('/<int:chapter_id>/reset-stats', methods=['POST'])
 def reset_chapter_stats(chapter_id):
     """Reset all statistics for a chapter"""
-    chapter = Chapter.query.get_or_404(chapter_id)
+    from sqlalchemy.orm import joinedload
+    chapter = Chapter.query.options(
+        joinedload(Chapter.cards).joinedload(VocabularyCard.reviews)
+    ).get_or_404(chapter_id)
     
     # Reset all cards to box 1 and clear review history
     for card in chapter.cards:

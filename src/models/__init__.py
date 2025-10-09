@@ -61,7 +61,7 @@ class VocabularyCard(db.Model):
     
     # SRS fields
     box_level = db.Column(db.Integer, default=1)  # Leitner box (1-5)
-    next_review = db.Column(db.DateTime, default=datetime.utcnow)
+    next_review = db.Column(db.DateTime, default=datetime.utcnow, index=True)  # Index for due card queries
     
     # Foreign key
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=False)
@@ -75,17 +75,8 @@ class VocabularyCard(db.Model):
     
     def update_srs(self, correct):
         """Update SRS data based on review result"""
-        if correct:
-            # Move to next box (max 5)
-            self.box_level = min(self.box_level + 1, 5)
-        else:
-            # Move back to box 1
-            self.box_level = 1
-        
-        # Calculate next review date based on box level
-        intervals = {1: 1, 2: 3, 3: 7, 4: 14, 5: 30}  # days
-        days_to_add = intervals[self.box_level]
-        self.next_review = datetime.utcnow() + timedelta(days=days_to_add)
+        from src.services.srs import SRSService
+        self.box_level, self.next_review = SRSService.calculate_next_review(self.box_level, correct)
     
     def to_dict(self):
         return {
@@ -106,7 +97,7 @@ class ReviewHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     correct = db.Column(db.Boolean, nullable=False)
     direction = db.Column(db.String(20), nullable=False)  # 'source_to_target' or 'target_to_source'
-    reviewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)  # Index for statistics queries
     
     # Foreign key
     card_id = db.Column(db.Integer, db.ForeignKey('vocabulary_cards.id'), nullable=False)

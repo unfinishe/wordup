@@ -88,11 +88,10 @@ def export_all_data():
     """Export all chapters and data as a ZIP file"""
     chapters = Chapter.query.all()
     
-    # Create a temporary ZIP file
-    temp_dir = tempfile.mkdtemp()
-    zip_path = os.path.join(temp_dir, f"wordup_full_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
+    # Create ZIP file in memory
+    zip_buffer = io.BytesIO()
     
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for chapter in chapters:
             # Prepare chapter data (same as single export)
             chapter_data = {
@@ -135,8 +134,11 @@ def export_all_data():
             filename = f"chapter_{secure_filename(chapter.name)}.json"
             zip_file.writestr(filename, json_data.encode('utf-8'))
     
+    # Rewind buffer to beginning for reading
+    zip_buffer.seek(0)
+    
     return send_file(
-        zip_path,
+        zip_buffer,
         as_attachment=True,
         download_name=f"wordup_full_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
         mimetype='application/zip'
@@ -155,12 +157,12 @@ def import_data():
             flash('No file selected', 'error')
             return redirect(request.url)
         
-        if not file.filename.lower().endswith(('.json', '.zip')):
+        if not file.filename or not file.filename.lower().endswith(('.json', '.zip')):
             flash('Please upload a JSON or ZIP file', 'error')
             return redirect(request.url)
         
         try:
-            if file.filename.lower().endswith('.zip'):
+            if file.filename and file.filename.lower().endswith('.zip'):
                 # Handle ZIP file import
                 import_count = _import_zip_file(file)
                 flash(f'Successfully imported {import_count} chapters from ZIP file', 'success')
@@ -280,7 +282,6 @@ def _import_zip_file(file):
                         import_count += 1
                     except ValueError as e:
                         # Skip chapters that already exist or have errors
-                        print(f"Skipping {filename}: {str(e)}")
                         continue
     
     return import_count
