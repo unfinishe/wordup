@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
 class SRSService:
@@ -24,15 +24,26 @@ class SRSService:
             new_box = 1
         
         days_to_add = SRSService.BOX_INTERVALS[new_box]
-        next_review = datetime.utcnow() + timedelta(days=days_to_add)
+        next_review = datetime.now(timezone.utc) + timedelta(days=days_to_add)
         
         return new_box, next_review
     
     @staticmethod
     def get_due_cards(cards):
         """Filter cards that are due for review"""
-        now = datetime.utcnow()
-        return [card for card in cards if card.next_review <= now]
+        now = datetime.now(timezone.utc)
+        due_cards = []
+        
+        for card in cards:
+            next_review = card.next_review
+            # Handle timezone-naive datetimes from database
+            if next_review.tzinfo is None:
+                next_review = next_review.replace(tzinfo=timezone.utc)
+            
+            if next_review <= now:
+                due_cards.append(card)
+                
+        return due_cards
     
     @staticmethod
     def get_random_direction():

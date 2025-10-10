@@ -24,14 +24,18 @@ sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 echo "🔄 Syncing version information..."
 python scripts/sync_version.py "$RELEASE_NAME"
 
-# 3. Run tests (if they exist)
+# 3. Run tests
 echo "🧪 Running tests..."
-if [ -f "requirements-test.txt" ] || grep -q "pytest" pyproject.toml; then
-    echo "Running test suite..."
-    # uv run pytest || echo "⚠️  Tests failed, continuing..."
-    echo "✅ Tests passed (or skipped)"
+if ./scripts/run_tests.sh; then
+    echo "✅ All tests passed!"
 else
-    echo "⚠️  No tests found, skipping..."
+    echo "❌ Tests failed!"
+    read -p "Continue with release anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Release cancelled."
+        exit 1
+    fi
 fi
 
 # 4. Build Docker image

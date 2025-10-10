@@ -26,9 +26,9 @@
 - ✅ Added database indexes for improved query performance
 - ✅ Implemented eager loading to prevent N+1 query issues
 - ✅ Added proper `.gitignore` for Python projects
+- ✅ Comprehensive test suite with pytest and coverage reporting
 
 #### Known Issues
-- ⚠️ No automated testing suite yet (planned for next release)
 - ⚠️ No ARC42 architecture documentation
 ---
 
@@ -244,10 +244,10 @@ server {
 }
 ```
 
-**Docker Compose with Nginx:**
+**Docker Compose with Reverse Proxy:**
 ```bash
-# Use the provided nginx configuration
-docker-compose -f docker-compose.subpath.yml up -d
+# Configure APPLICATION_ROOT in your environment and use regular docker-compose
+docker-compose up -d
 
 # Access at: http://your-domain/wordup/
 ```
@@ -258,6 +258,7 @@ docker-compose -f docker-compose.subpath.yml up -d
 ```
 wordup/
 ├── src/
+│   ├── __version__.py      # Version tracking
 │   ├── app.py              # Flask application factory
 │   ├── models/__init__.py  # SQLAlchemy models
 │   ├── routes/             # Flask blueprints
@@ -270,8 +271,21 @@ wordup/
 │   │   └── srs.py          # Leitner system logic
 │   ├── templates/          # Jinja2 templates
 │   └── static/             # CSS and JavaScript
+├── tests/                  # Test suite
+│   ├── conftest.py         # Test fixtures
+│   ├── test_app.py         # Application tests
+│   ├── test_models.py      # Model tests
+│   ├── test_routes.py      # Route tests
+│   └── test_srs.py         # SRS service tests
+├── scripts/                # Development scripts
+│   ├── run_tests.sh        # Test runner
+│   ├── create_release.sh   # Release automation
+│   └── sync_version.py     # Version synchronization
+├── docs/                   # Documentation and assets
 ├── main.py                 # Application entry point
-├── pyproject.toml          # Dependencies
+├── pyproject.toml          # Dependencies and project config
+├── docker-compose.yml      # Docker deployment
+├── Dockerfile              # Container definition
 └── .env.example            # Configuration template
 ```
 
@@ -290,9 +304,45 @@ WordUp uses SQLAlchemy with automatic table creation. For schema changes:
 
 ## 🧪 Testing
 
-Manual testing approaches:
+WordUp includes a comprehensive test suite with pytest and coverage reporting.
+
+### Running Tests
+
+**Quick test run:**
+```bash
+./scripts/run_tests.sh
+```
+
+**Manual test commands:**
+```bash
+# Install test dependencies
+uv sync --extra test
+
+# Run all tests with coverage
+PYTHONPATH=. uv run pytest -v --cov=src --cov-report=html
+
+# Run specific test modules
+PYTHONPATH=. uv run pytest tests/test_models.py -v
+PYTHONPATH=. uv run pytest tests/test_routes.py -v  
+PYTHONPATH=. uv run pytest tests/test_srs.py -v
+PYTHONPATH=. uv run pytest tests/test_app.py -v
+```
+
+### Test Coverage
+
+Current test coverage includes:
+- **Models**: Chapter, VocabularyCard, ReviewHistory creation and methods
+- **SRS Service**: Leitner system logic, next review calculation, statistics
+- **Routes**: Basic route functionality and response testing
+- **Application**: Flask app creation, context, and database initialization
+
+Coverage reports are generated in `htmlcov/index.html` after running tests.
+
+### Manual Testing
+
+Additional manual testing approaches:
 - **Export/Import**: Test data preservation with admin features
-- **Learning Sessions**: Verify SRS logic with different answer patterns
+- **Learning Sessions**: Verify SRS logic with different answer patterns  
 - **Responsive Design**: Test on mobile and desktop browsers
 - **Database**: Verify data integrity across operations
 

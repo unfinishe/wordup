@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 
 db = SQLAlchemy()
@@ -11,7 +11,7 @@ class Chapter(db.Model):
     name = db.Column(db.String(100), nullable=False)
     source_language = db.Column(db.String(50), nullable=False)
     target_language = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationship to vocabulary cards
     cards = db.relationship('VocabularyCard', backref='chapter', lazy=True, cascade='all, delete-orphan')
@@ -34,7 +34,7 @@ class Chapter(db.Model):
     
     def get_due_count(self):
         """Get count of cards due for review"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return len([card for card in self.cards if card.is_due()])
     
     def to_dict(self):
@@ -57,11 +57,11 @@ class VocabularyCard(db.Model):
     target_word = db.Column(db.String(200), nullable=False)
     example_sentence = db.Column(db.Text)
     context_hint = db.Column(db.String(500), default='')  # Context or hint for the word pair
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # SRS fields
     box_level = db.Column(db.Integer, default=1)  # Leitner box (1-5)
-    next_review = db.Column(db.DateTime, default=datetime.utcnow, index=True)  # Index for due card queries
+    next_review = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)  # Index for due card queries
     
     # Foreign key
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=False)
@@ -71,7 +71,14 @@ class VocabularyCard(db.Model):
     
     def is_due(self):
         """Check if card is due for review"""
-        return datetime.utcnow() >= self.next_review
+        now = datetime.now(timezone.utc)
+        next_review = self.next_review
+        
+        # Handle timezone-naive datetimes from database
+        if next_review.tzinfo is None:
+            next_review = next_review.replace(tzinfo=timezone.utc)
+            
+        return now >= next_review
     
     def update_srs(self, correct):
         """Update SRS data based on review result"""
@@ -97,7 +104,7 @@ class ReviewHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     correct = db.Column(db.Boolean, nullable=False)
     direction = db.Column(db.String(20), nullable=False)  # 'source_to_target' or 'target_to_source'
-    reviewed_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)  # Index for statistics queries
+    reviewed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)  # Index for statistics queries
     
     # Foreign key
     card_id = db.Column(db.Integer, db.ForeignKey('vocabulary_cards.id'), nullable=False)
