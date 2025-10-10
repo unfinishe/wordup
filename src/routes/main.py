@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from src.models import Chapter, db
 from src.services.srs import SRSService
+from src.__version__ import __version__, RELEASE_NAME, BUILD_DATE
 
 main_bp = Blueprint('main', __name__)
 
@@ -29,4 +30,9 @@ def dashboard():
 @main_bp.route('/help')
 def help_page():
     """Help page explaining WordUp usage and Leitner System"""
-    return render_template('help.html')
+    version_info = {
+        'version': __version__,
+        'release_name': RELEASE_NAME,
+        'build_date': BUILD_DATE
+    }
+    return render_template('help.html', version_info=version_info)

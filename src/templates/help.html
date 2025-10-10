@@ -227,10 +227,19 @@
                         language learning community for inspiration and feedback.</p>
                     </div>
                     
-                    <p class="version-info">
+                    <div class="version-info">
                         <small><i class="fas fa-code"></i> 
                         Developed with ❤️ for language learners worldwide</small>
-                    </p>
+                        
+                        {% if version_info %}
+                        <br>
+                        <small><i class="fas fa-tag"></i> 
+                        WordUp {{ version_info.version }} - {{ version_info.release_name }}</small>
+                        <br>
+                        <small><i class="fas fa-calendar"></i> 
+                        Build Date: {{ version_info.build_date }}</small>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </section>

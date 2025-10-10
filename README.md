@@ -4,6 +4,34 @@
 
 ![WordUp Screenshot](docs/screenshot-01.png)
 
+## 📋 Release Notes
+
+### v1.0.0 - Initial Release (2025-10-10)
+- 🎉 **Initial public release** of WordUp vocabulary trainer
+- 📚 **Complete Leitner SRS implementation** with 5-box spaced repetition system
+- 🌐 **Multi-language support** for any language pair combinations
+- 📊 **Comprehensive progress tracking** with success rates and statistics
+- 📥📤 **Data management** with JSON/ZIP export and import functionality
+- 🐳 **Docker support** with production-ready containerization
+- 🔧 **Reverse proxy compatibility** for nginx and other proxy servers
+- 📱 **Responsive design** optimized for desktop and mobile devices
+- 💾 **SQLite database** with automatic schema creation
+- 🏷️ **Version tracking** displayed on help page
+- 📖 **Comprehensive help system** with Leitner system explanation
+
+#### Technical Improvements
+- ✅ Fixed temporary file leaks in ZIP export functionality
+- ✅ Consolidated duplicate SRS logic between model and service layers
+- ✅ Removed debug print statements for production readiness
+- ✅ Added database indexes for improved query performance
+- ✅ Implemented eager loading to prevent N+1 query issues
+- ✅ Added proper `.gitignore` for Python projects
+
+#### Known Issues
+- ⚠️ No automated testing suite yet (planned for next release)
+- ⚠️ No ARC42 architecture documentation
+---
+
 ## ✨ Features
 
 ### 📚 Vocabulary Management
@@ -279,6 +307,58 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## 🏷️ Creating Releases
+
+WordUp includes automated release management with version tracking displayed on the help page.
+
+### Release Workflow
+
+**1. Create a new release:**
+```bash
+# Create release with version and optional name
+./scripts/create_release.sh 1.0.0 "Stable Release"
+
+# Or for beta versions
+./scripts/create_release.sh 0.2.0 "Beta Version"
+```
+
+**2. The script automatically:**
+- Updates `pyproject.toml` with new version
+- Syncs version to `src/__version__.py` 
+- Builds Docker images (`wordup:1.0.0`, `wordup:latest`)
+- Creates Git commit and tag (`v1.0.0`)
+- Shows next steps
+
+**3. Publish the release:**
+```bash
+# Push to repository
+git push origin main --tags
+
+# The version will appear on the help page as:
+# "WordUp 1.0.0 - Stable Release"
+# "Build Date: 2025-10-10"
+```
+
+**4. GitHub Release (optional):**
+- Go to GitHub → Releases → "Create a new release"
+- Select tag `v1.0.0` (automatically created)
+- Add release notes and publish
+
+### Manual Version Updates
+
+If you need to update only the version information:
+```bash
+# Sync version from pyproject.toml
+python scripts/sync_version.py "Custom Release Name"
+```
+
+### Version Display
+
+Version information is automatically displayed on the help page (`/help`) and includes:
+- Version number (from `pyproject.toml`)
+- Release name (customizable)
+- Build date (automatically generated)
 
 ## 📧 Support
 
