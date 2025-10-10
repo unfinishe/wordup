@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Flask instance folder (contains runtime data, databases, config)
+instance/
+
 # Development databases (example/test databases)
 data/
 *.sqlite
