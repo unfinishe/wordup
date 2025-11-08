@@ -6,6 +6,9 @@
 
 ## 📋 Release Notes
 
+### v1.2.0 - Theming (2025-11-08)
+- 🎨 **Custom Backgrounds**: Upload your own background images for a personalized experience. The background will be displayed on the dashboard and chapter pages. You can upload and activate the background image in the Admin page.
+
 ### v1.1.0 - Context Learning Mode (2025-11-08)
 - 📖 **Context learning mode** - Learn vocabulary in context with three flexible modes:
   - **Context Mode**: Shows only cards with a context/hint field and an example sentence. The hint is displayed alon the source word as the question, and you answer with the complete example sentence. Direction is always source → target.
