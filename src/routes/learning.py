@@ -29,6 +29,7 @@ def create_session(chapter_id):
     
     direction = request.form.get('direction', 'random')
     limit = min(int(request.form.get('limit', 10)), 50)  # Max 50 cards per session
+    context_mode = request.form.get('context_mode', 'combined')  # context, word, or combined
     
     # Check if user wants to practice all cards, specific box, or just due cards
     practice_mode = request.form.get('practice_mode', 'due_only')
@@ -60,22 +61,55 @@ def create_session(chapter_id):
         # Get review queue (due cards only)
         queue = SRSService.get_review_queue(chapter, direction, limit)
     
+    # Apply context mode filtering
+    if context_mode == 'context':
+        # Only cards with both context_hint and example_sentence
+        queue = [card for card in queue if card.context_hint and card.example_sentence]
+    elif context_mode == 'word':
+        # All cards (no filtering), but we'll handle display differently
+        pass
+    elif context_mode == 'combined':
+        # Duplicate cards that have context for two reviews
+        # We'll handle this in the review phase by tracking card presentation mode
+        pass
+    
     if not queue:
         if practice_mode == 'box_specific':
             box_level = int(request.form.get('box_level', 1))
             flash(f'No cards available in Box {box_level} for this chapter', 'info')
+        elif context_mode == 'context':
+            flash('No cards with context hints available for review in this chapter', 'info')
         else:
             flash('No cards available for review in this chapter', 'info')
         return redirect(url_for('chapters.view_chapter', chapter_id=chapter_id))
     
+    # Build session cards list with presentation mode for combined mode
+    session_cards = []
+    for card in queue:
+        if context_mode == 'combined' and card.context_hint and card.example_sentence:
+            # Add card twice: once as context question, once as word question
+            session_cards.append({'card_id': card.id, 'mode': 'context'})
+            session_cards.append({'card_id': card.id, 'mode': 'word'})
+        else:
+            # Add card once with appropriate mode
+            if context_mode == 'context':
+                session_cards.append({'card_id': card.id, 'mode': 'context'})
+            else:
+                session_cards.append({'card_id': card.id, 'mode': 'word'})
+    
+    # Shuffle the session cards for combined mode
+    if context_mode == 'combined':
+        random.shuffle(session_cards)
+    
     # Store session in Flask session
     session['learning_session'] = {
         'chapter_id': chapter_id,
-        'cards': [card.id for card in queue],
+        'cards': session_cards,
         'direction': direction,
+        'context_mode': context_mode,
         'current_index': 0,
         'correct_count': 0,
-        'total_count': len(queue)
+        'total_count': len(session_cards)
     }
     
     return redirect(url_for('learning.review_card'))
@@ -93,27 +127,41 @@ def review_card():
     if session_data['current_index'] >= len(session_data['cards']):
         return redirect(url_for('learning.session_complete'))
     
-    # Get current card
-    card_id = session_data['cards'][session_data['current_index']]
+    # Get current card and presentation mode
+    card_info = session_data['cards'][session_data['current_index']]
+    card_id = card_info['card_id']
+    presentation_mode = card_info['mode']
+    
     card = VocabularyCard.query.get_or_404(card_id)
     
-    # Determine direction for this card
-    if session_data['direction'] == 'random':
-        review_direction = random.choice(['source_to_target', 'target_to_source'])
-    else:
-        review_direction = session_data['direction']
-    
-    # Prepare card data for template
-    if review_direction == 'source_to_target':
+    # Determine direction and question/answer based on presentation mode
+    if presentation_mode == 'context':
+        # Context mode: source_word + context_hint → example_sentence
         question = card.source_word
-        answer = card.target_word
+        answer = card.example_sentence
         question_lang = card.chapter.source_language
         answer_lang = card.chapter.target_language
+        review_direction = 'context'
+        show_context_hint = True
     else:
-        question = card.target_word
-        answer = card.source_word
-        question_lang = card.chapter.target_language
-        answer_lang = card.chapter.source_language
+        # Word mode: regular word translation
+        if session_data['direction'] == 'random':
+            review_direction = random.choice(['source_to_target', 'target_to_source'])
+        else:
+            review_direction = session_data['direction']
+        
+        if review_direction == 'source_to_target':
+            question = card.source_word
+            answer = card.target_word
+            question_lang = card.chapter.source_language
+            answer_lang = card.chapter.target_language
+        else:
+            question = card.target_word
+            answer = card.source_word
+            question_lang = card.chapter.target_language
+            answer_lang = card.chapter.source_language
+        
+        show_context_hint = False
     
     return render_template('learning/review.html',
                          card=card,
@@ -123,6 +171,8 @@ def review_card():
                          question_lang=question_lang,
                          answer_lang=answer_lang,
                          direction=review_direction,
+                         presentation_mode=presentation_mode,
+                         show_context_hint=show_context_hint,
                          progress=session_data['current_index'] + 1,
                          total=session_data['total_count'])
 
@@ -138,18 +188,21 @@ def submit_answer():
     correct = request.form.get('correct') == 'true'
     direction = request.form.get('direction')
     
-    # Update SRS data
-    card.update_srs(correct)
-    
-    # Record review history
-    review = ReviewHistory(
-        card_id=card.id,
-        correct=correct,
-        direction=direction
-    )
-    
-    db.session.add(review)
-    db.session.commit()
+    # Only update SRS data for word mode, not for context mode
+    # Context mode is for practice only and doesn't affect Leitner progression
+    if direction != 'context':
+        # Update SRS data
+        card.update_srs(correct)
+        
+        # Record review history
+        review = ReviewHistory(
+            card_id=card.id,
+            correct=correct,
+            direction=direction
+        )
+        
+        db.session.add(review)
+        db.session.commit()
     
     # Update session data
     session_data = session['learning_session']
@@ -195,18 +248,21 @@ def api_submit_answer():
     
     card = VocabularyCard.query.get_or_404(card_id)
     
-    # Update SRS data
-    card.update_srs(correct)
-    
-    # Record review history
-    review = ReviewHistory(
-        card_id=card.id,
-        correct=correct,
-        direction=direction
-    )
-    
-    db.session.add(review)
-    db.session.commit()
+    # Only update SRS data for word mode, not for context mode
+    # Context mode is for practice only and doesn't affect Leitner progression
+    if direction != 'context':
+        # Update SRS data
+        card.update_srs(correct)
+        
+        # Record review history
+        review = ReviewHistory(
+            card_id=card.id,
+            correct=correct,
+            direction=direction
+        )
+        
+        db.session.add(review)
+        db.session.commit()
     
     # Update session data
     if 'learning_session' in session:

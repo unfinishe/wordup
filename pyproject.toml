@@ -1,6 +1,6 @@
 [project]
 name = "wordup"
-version = "1.0.0"
+version = "1.1.0"
 description = "A vocabulary trainer with Spaced Repetition System"
 readme = "README.md"
 license = {text = "MIT"}

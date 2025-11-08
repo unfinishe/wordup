@@ -6,6 +6,14 @@
 
 ## 📋 Release Notes
 
+### v1.1.0 - Context Learning Mode (2025-11-08)
+- 📖 **Context learning mode** - Learn vocabulary in context with three flexible modes:
+  - **Context Mode**: Shows only cards with a context/hint field and an example sentence. The hint is displayed alon the source word as the question, and you answer with the complete example sentence. Direction is always source → target.
+  - **Word Mode**: Shows all cards. You translate individual words in both directions (source ↔ target). The hint won't be displayed, neither the example sentence.
+  - **Combined Mode** (default): Shows all cards. Cards with context appear twice - once as a context question (hint→sentence) and once as a regular word translation.
+  
+  You can choose the mode on the start learning page. The context mode won't affect the regular Leitner system, so you can use it to learn words in context without affecting your regular learning progress.
+
 ### v1.0.0 - Initial Release (2025-10-10)
 - 🎉 **Initial public release** of WordUp vocabulary trainer
 - 📚 **Complete Leitner SRS implementation** with 5-box spaced repetition system
@@ -423,3 +431,8 @@ For questions or issues:
 - **Flask**: Web framework powering the application
 - **SQLAlchemy**: ORM for database management
 - **Font Awesome**: Icons used throughout the interface
+
+## Outlook
+
+Future enhancements may include:
+- Deletion of chapters

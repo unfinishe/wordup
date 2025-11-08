@@ -16,19 +16,23 @@
             
             <div class="question-card">
                 <div class="word">{{ question }}</div>
-                {% if card.context_hint %}
+                {% if show_context_hint and card.context_hint %}
                     <div class="context-hint">
                         <i class="fas fa-lightbulb"></i> {{ card.context_hint }}
                     </div>
                 {% endif %}
-                {% if card.example_sentence and direction == 'source_to_target' %}
-                    <div class="example">{{ card.example_sentence }}</div>
-                {% endif %}
             </div>
+
+            {% if presentation_mode == 'context' %}
+                <div class="context-instruction">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Type the complete example sentence</span>
+                </div>
+            {% endif %}
 
             <div class="translation-input">
                 <div class="language-indicator">{{ answer_lang }}</div>
-                <input type="text" id="user-answer" placeholder="Enter your translation..." 
+                <input type="text" id="user-answer" placeholder="{% if presentation_mode == 'context' %}Enter the complete sentence...{% else %}Enter your translation...{% endif %}" 
                        autocomplete="off" autofocus>
                 <button id="check-answer" class="btn btn-primary btn-lg" onclick="checkAnswer()">
                     <i class="fas fa-check"></i> Check Answer
@@ -40,8 +44,13 @@
         <div id="answer-phase" style="display: none;">
             <div class="result-display">
                 <div class="original-word-display">
-                    <div class="label">{{ question_lang }} Word:</div>
+                    <div class="label">{{ question_lang }} {% if presentation_mode == 'context' %}Sentence:{% else %}Word:{% endif %}</div>
                     <div class="original-word">{{ question }}</div>
+                    {% if card.context_hint %}
+                        <div class="context-hint-display">
+                            <i class="fas fa-lightbulb"></i> {{ card.context_hint }}
+                        </div>
+                    {% endif %}
                 </div>
                 
                 <div class="user-answer-display">
@@ -54,8 +63,10 @@
                     <div class="correct-answer">{{ answer }}</div>
                 </div>
                 
-                {% if card.example_sentence %}
-                    <div class="example">{{ card.example_sentence }}</div>
+                {% if presentation_mode != 'context' and card.example_sentence %}
+                    <div class="example">
+                        <i class="fas fa-quote-left"></i> {{ card.example_sentence }}
+                    </div>
                 {% endif %}
             </div>
 
@@ -200,6 +211,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .context-hint i {
     font-size: 0.75rem;
+}
+
+.context-hint-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    margin-top: 0.75rem;
+    font-style: italic;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.context-instruction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: #f0f9ff;
+    border: 1px solid var(--primary-color);
+    border-radius: 0.5rem;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.context-instruction i {
+    font-size: 1rem;
+}
+
+.example {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-left: 3px solid var(--info-color);
+    border-radius: 0.5rem;
+    font-style: italic;
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.example i {
+    color: var(--info-color);
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
 }
 
 .translation-input {

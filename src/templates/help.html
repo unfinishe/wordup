@@ -46,7 +46,17 @@
                     <ul>
                         <li><strong>Due Cards:</strong> Review only cards scheduled for today</li>
                         <li><strong>Practice Mode:</strong> Review any cards for extra practice</li>
+                        <li><strong>Specific Box:</strong> Focus on a single Leitner box to reinforce weak spots</li>
                     </ul>
+                </div>
+                <div class="help-item">
+                    <h4>Learning Modes</h4>
+                    <ul>
+                        <li><strong>Combined Mode:</strong> All cards, context cards appear twice (context + word)</li>
+                        <li><strong>Word Mode:</strong> Classic vocabulary translation without context hints</li>
+                        <li><strong>Context Mode:</strong> Only cards with context hints and example sentences; answer with the full sentence</li>
+                    </ul>
+                    <p class="help-note"><i class="fas fa-info-circle"></i> Answers in Context Mode help you practice sentences but do not change Leitner box levels.</p>
                 </div>
             </div>
         </section>
@@ -79,7 +89,7 @@
                         <ol>
                             <li><strong>Creating Cards:</strong> Add hints in the "Context/Hint" field when creating or editing cards</li>
                             <li><strong>Bulk Import:</strong> Include hints as the 4th column: <code>word | translation | example | hint</code></li>
-                            <li><strong>Learning:</strong> Hints appear automatically during practice sessions</li>
+                            <li><strong>Learning:</strong> Hints appear automatically and unlock Context Mode sessions</li>
                             <li><strong>Visual Design:</strong> Hints are displayed with a lightbulb icon in a subtle blue style</li>
                         </ol>
                     </div>
@@ -546,12 +556,16 @@
     text-align: center;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
-    margin-top: 1.5rem;
-}
-
-.version-info small {
-    color: var(--text-muted);
     font-size: 0.875rem;
 }
+.help-note {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 </style>
+
 {% endblock %}

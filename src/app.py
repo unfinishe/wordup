@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-def create_app():
+def create_app(config_overrides=None):
     """Application factory pattern"""
     # Get the directory of this file (src/) and set template/static paths relative to it
     app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,27 +17,24 @@ def create_app():
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     
-    # Set database URI - handle both absolute and relative paths
     os.makedirs(app.instance_path, exist_ok=True)
     default_db_path = f'sqlite:///{app.instance_path}/wordup.db'
-    
-    # Get database URL from environment or use default
     database_url = os.getenv('DATABASE_URL', default_db_path)
-    
-    # If the database URL is a relative SQLite path, make it absolute
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    if config_overrides:
+        app.config.update(config_overrides)
+
+    # Normalize SQLite relative paths after overrides applied
+    database_url = app.config['SQLALCHEMY_DATABASE_URI']
     if database_url.startswith('sqlite:///') and not os.path.isabs(database_url[10:]):
-        # Extract the relative path (skip 'sqlite:///')
         relative_path = database_url[10:]
-        # Make it absolute by joining with the app root directory
         app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         absolute_path = os.path.join(app_root, relative_path)
         database_url = f'sqlite:///{absolute_path}'
-        
-        # Ensure the directory exists
         os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
-    
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     
     # Configure subpath support for reverse proxy
     application_root = os.getenv('APPLICATION_ROOT', '/')
@@ -68,10 +65,10 @@ def create_app():
     app.register_blueprint(learning_bp, url_prefix='/learn')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     
-    # Create tables
-    with app.app_context():
-        # Ensure data directory exists
-        os.makedirs('data', exist_ok=True)
-        db.create_all()
+    if not app.config.get('TESTING', False):
+        with app.app_context():
+            # Ensure data directory exists
+            os.makedirs('data', exist_ok=True)
+            db.create_all()
     
     return app

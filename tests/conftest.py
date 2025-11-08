@@ -27,8 +27,7 @@ def app():
     }
     
     # Create app with test config
-    app = create_app()
-    app.config.update(test_config)
+    app = create_app(test_config)
     
     with app.app_context():
         db.create_all()

@@ -48,6 +48,42 @@
 
         <form method="POST" action="{{ url_for('learning.create_session', chapter_id=chapter.id) }}">
             <div class="form-group">
+                <label for="context_mode">
+                    <i class="fas fa-book-open"></i> Learning Mode
+                </label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="context_mode" value="combined" checked>
+                        <span class="radio-label">
+                            <i class="fas fa-layer-group"></i>
+                            <strong>Combined Mode</strong>
+                            <small>All cards - context cards appear twice (context + word)</small>
+                        </span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="context_mode" value="word">
+                        <span class="radio-label">
+                            <i class="fas fa-language"></i>
+                            <strong>Word Mode</strong>
+                            <small>Translate individual words (no context displayed)</small>
+                        </span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="context_mode" value="context">
+                        <span class="radio-label">
+                            <i class="fas fa-quote-right"></i>
+                            <strong>Context Mode</strong>
+                            <small>Only cards with context - answer with full sentence</small>
+                        </span>
+                    </label>
+                </div>
+                <div class="context-mode-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Context mode reviews don't affect your Leitner progress</span>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="practice_mode">Practice Mode</label>
                 <select id="practice_mode" name="practice_mode" class="form-select" onchange="updatePracticeOptions()">
                     {% if due_count > 0 %}
@@ -267,6 +303,117 @@
     .box-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.radio-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 1rem 1rem 1rem 3.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    background: var(--card-bg);
+    transition: all 0.2s;
+}
+
+.radio-option:hover {
+    border-color: var(--primary-color);
+    background: #f0f9ff;
+}
+
+.radio-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-label {
+    color: var(--primary-color);
+}
+
+.radio-option input[type="radio"]:checked {
+    & ~ .radio-label {
+        color: var(--primary-color);
+    }
+}
+
+.radio-option:has(input[type="radio"]:checked) {
+    border-color: var(--primary-color);
+    background: #f0f9ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.radio-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.radio-label::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    background: white;
+    transition: all 0.2s;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-label::before {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    box-shadow: inset 0 0 0 3px white;
+}
+
+.radio-label i {
+    font-size: 1rem;
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+}
+
+.radio-label strong {
+    font-size: 1rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.radio-label small {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.context-mode-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #92400e;
+}
+
+.context-mode-info i {
+    color: #f59e0b;
+    font-size: 1rem;
 }
 </style>
 {% endblock %}
