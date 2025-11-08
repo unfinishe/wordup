@@ -38,16 +38,7 @@ else
     fi
 fi
 
-# 4. Build Docker image
-echo "🐳 Building Docker image..."
-docker build -t wordup:$VERSION .
-docker tag wordup:$VERSION wordup:latest
-
-echo "📦 Docker images created:"
-echo "  - wordup:$VERSION"
-echo "  - wordup:latest"
-
-# 5. Git operations
+# 4. Git operations
 echo "📋 Preparing Git commit..."
 git add pyproject.toml src/__version__.py
 
