@@ -1,9 +1,11 @@
 """Test configuration and fixtures for WordUp tests."""
 
-import pytest
-import tempfile
 import os
+import shutil
 import sys
+import tempfile
+
+import pytest
 
 # Add project root to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,7 +37,12 @@ def app():
         
     # Cleanup
     os.close(db_fd)
-    os.unlink(db_path)
+    if os.path.exists(db_path):
+        os.unlink(db_path)
+
+    theming_dir = os.path.join(os.path.dirname(db_path), 'theming')
+    if os.path.exists(theming_dir):
+        shutil.rmtree(theming_dir)
 
 @pytest.fixture
 def client(app):

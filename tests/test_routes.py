@@ -1,5 +1,11 @@
 """Test the main routes."""
 
+import io
+import os
+
+from src.models import AppConfig
+from src.services.theming import get_theming_folder
+
 from src.__version__ import __version__
 
 def test_dashboard_route(client):
@@ -357,3 +363,69 @@ def test_no_cards_with_context_shows_message(client, app, sample_chapter):
         
         assert response.status_code == 200
         assert b'No cards with context hints available' in response.data
+
+
+def test_admin_theming_page_renders(client):
+    """The theming settings page should render successfully."""
+    response = client.get('/admin/theming')
+    assert response.status_code == 200
+    assert b'Theming Settings' in response.data
+    assert b'Upload background image' in response.data
+
+
+def test_admin_theming_upload_and_enable(client, app):
+    """Uploading and enabling theming should persist settings and files."""
+    image_stream = io.BytesIO(b'\x89PNG\r\n\x1a\n' + b'\x00' * 16)
+
+    response = client.post(
+        '/admin/theming',
+        data={
+            'enable_theming': 'on',
+            'background_image': (image_stream, 'background.png'),
+            'action': 'save'
+        },
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+
+    assert response.status_code == 200
+    assert b'Theming settings updated successfully.' in response.data
+
+    with app.app_context():
+        config = AppConfig.get_config()
+        assert config.theming_enabled is True
+        assert config.theming_background
+        folder = get_theming_folder(app)
+        assert os.path.exists(os.path.join(folder, config.theming_background))
+
+
+def test_admin_theming_remove_background(client, app):
+    """Removing the background disables theming and deletes the file."""
+    upload_stream = io.BytesIO(b'\x89PNG\r\n\x1a\n' + b'\x01' * 16)
+
+    client.post(
+        '/admin/theming',
+        data={
+            'enable_theming': 'on',
+            'background_image': (upload_stream, 'background.png'),
+            'action': 'save'
+        },
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+
+    with app.app_context():
+        config = AppConfig.get_config()
+        folder = get_theming_folder(app)
+        background_path = os.path.join(folder, config.theming_background)
+        assert os.path.exists(background_path)
+
+    response = client.post('/admin/theming', data={'action': 'remove'}, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'Background image removed and theming disabled.' in response.data
+
+    with app.app_context():
+        config = AppConfig.get_config()
+        assert config.theming_enabled is False
+        assert config.theming_background is None
+        assert not os.path.exists(background_path)

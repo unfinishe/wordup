@@ -29,6 +29,30 @@ body {
     line-height: 1.6;
 }
 
+body.theming-active {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    transition: background-image 0.3s ease-in-out;
+}
+
+body.theming-active .main-content {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 1rem;
+    margin-top: 2rem;
+    padding: 2rem 1.5rem;
+    box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+    body.theming-active .main-content {
+        margin-top: 1rem;
+        padding: 1.5rem 1rem;
+        border-radius: 0.75rem;
+    }
+}
+
 /* Navigation */
 .navbar {
     background: var(--card-bg);

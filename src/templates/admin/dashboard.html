@@ -125,6 +125,31 @@
                 </div>
             </div>
         </section>
+
+        <!-- Theming Section -->
+        <section class="admin-section">
+            <div class="section-header">
+                <h2><i class="fas fa-paint-brush"></i> Appearance & Theming</h2>
+                <p>Upload a custom background image and toggle the global theme.</p>
+            </div>
+            <div class="theming-card">
+                <div class="theming-details">
+                    <h3><i class="fas fa-image"></i> Custom Background</h3>
+                    <p>WordUp can render a full-page background image to personalize the app. Manage uploads and settings in the theming panel.</p>
+                    <ul>
+                        <li>Status: <strong>{{ 'Enabled' if theming_config.theming_enabled else 'Disabled' }}</strong></li>
+                        <li>Storage: <code>{{ theming_folder if theming_folder else 'n/a' }}</code></li>
+                        <li>Background: <strong>{{ theming_config.theming_background if theming_config.theming_background else 'Not set' }}</strong></li>
+                    </ul>
+                    <a href="{{ url_for('admin.theming_settings') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sliders-h"></i> Manage Theming
+                    </a>
+                </div>
+                {% if background_url %}
+                <div class="theming-preview" style="background-image: url('{{ background_url }}');"></div>
+                {% endif %}
+            </div>
+        </section>
     </div>
 </div>
 
@@ -266,6 +291,44 @@
     color: #92400e;
 }
 
+.theming-card {
+    display: flex;
+    gap: 2rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2rem;
+    flex-wrap: wrap;
+}
+
+.theming-details {
+    flex: 1;
+    min-width: 280px;
+}
+
+.theming-details h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.theming-details ul {
+    margin: 1rem 0 2rem 1.25rem;
+    color: var(--text-secondary);
+}
+
+.theming-preview {
+    width: 280px;
+    height: 180px;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    background-size: cover;
+    background-position: center;
+    box-shadow: var(--shadow-lg);
+}
+
 @media (max-width: 768px) {
     .export-options {
         grid-template-columns: 1fr;
@@ -280,6 +343,15 @@
     .chapter-export-item .btn {
         align-self: stretch;
         text-align: center;
+    }
+
+    .theming-card {
+        flex-direction: column;
+    }
+    
+    .theming-preview {
+        width: 100%;
+        height: 200px;
     }
 }
 </style>

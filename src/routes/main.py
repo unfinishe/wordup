@@ -1,6 +1,9 @@
-from flask import Blueprint, render_template
-from src.models import Chapter, db
+import os
+
+from flask import Blueprint, render_template, send_from_directory, current_app, abort
+from src.models import Chapter, db, AppConfig
 from src.services.srs import SRSService
+from src.services.theming import get_theming_folder
 from src.__version__ import __version__, RELEASE_NAME, BUILD_DATE
 
 main_bp = Blueprint('main', __name__)
@@ -36,3 +39,17 @@ def help_page():
         'build_date': BUILD_DATE
     }
     return render_template('help.html', version_info=version_info)
+
+
+@main_bp.route('/theming/background/<path:filename>')
+def theming_background(filename):
+    config = AppConfig.get_config()
+    if not config.theming_background or filename != config.theming_background:
+        abort(404)
+
+    folder = get_theming_folder(current_app)
+    file_path = os.path.join(folder, filename)
+    if not os.path.exists(file_path):
+        abort(404)
+
+    return send_from_directory(folder, filename)

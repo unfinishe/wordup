@@ -64,6 +64,16 @@ def create_app(config_overrides=None):
     app.register_blueprint(cards_bp, url_prefix='/cards')
     app.register_blueprint(learning_bp, url_prefix='/learn')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    @app.context_processor
+    def inject_theming_config():
+        from src.models import AppConfig
+        config = None
+        try:
+            config = AppConfig.get_config()
+        except Exception:
+            db.session.rollback()
+        return {'theming_config': config}
     
     if not app.config.get('TESTING', False):
         with app.app_context():

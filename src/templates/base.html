@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+{% set theming_enabled = theming_config and theming_config.theming_enabled and theming_config.theming_background %}
+{% set body_class = 'theming-active' if theming_enabled else '' %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}WordUp - Vocabulary Trainer{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% if theming_enabled %}
+    <style>
+        body.theming-active {
+            background-image: url("{{ url_for('main.theming_background', filename=theming_config.theming_background) }}");
+        }
+    </style>
+    {% endif %}
 </head>
-<body>
+<body class="{{ body_class }}">
     <nav class="navbar">
         <div class="nav-container">
             <a href="{{ url_for('main.dashboard') }}" class="nav-brand">

@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app
 from datetime import datetime
-from src.models import Chapter, VocabularyCard, ReviewHistory, db
+from src.models import Chapter, VocabularyCard, ReviewHistory, AppConfig, db
 import json
 import io
 import zipfile
@@ -8,12 +8,23 @@ from werkzeug.utils import secure_filename
 import tempfile
 import os
 
+from src.services.theming import (
+    delete_background_image,
+    get_theming_folder,
+    save_background_image,
+)
+
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/')
 def admin_dashboard():
     """Admin dashboard showing export/import options"""
     chapters = Chapter.query.all()
+    config = AppConfig.get_config()
+    background_url = None
+    if config.theming_background:
+        background_url = url_for('main.theming_background', filename=config.theming_background)
+    theming_folder = get_theming_folder(current_app)
     
     # Calculate overall statistics
     total_chapters = len(chapters)
@@ -26,7 +37,68 @@ def admin_dashboard():
         'total_reviews': total_reviews
     }
     
-    return render_template('admin/dashboard.html', chapters=chapters, stats=stats)
+    return render_template(
+        'admin/dashboard.html',
+        chapters=chapters,
+        stats=stats,
+        theming_config=config,
+        background_url=background_url,
+        theming_folder=theming_folder
+    )
+
+
+@admin_bp.route('/theming', methods=['GET', 'POST'])
+def theming_settings():
+    """Manage theming settings."""
+    config = AppConfig.get_config()
+    background_url = None
+    if config.theming_background:
+        background_url = url_for('main.theming_background', filename=config.theming_background)
+
+    if request.method == 'POST':
+        action = request.form.get('action', 'save')
+
+        if action == 'remove':
+            delete_background_image(current_app, config.theming_background)
+            config.theming_background = None
+            config.theming_enabled = False
+            db.session.commit()
+            flash('Background image removed and theming disabled.', 'success')
+            return redirect(url_for('admin.theming_settings'))
+
+        enable_theming = bool(request.form.get('enable_theming'))
+        uploaded_file = request.files.get('background_image')
+
+        if uploaded_file and uploaded_file.filename:
+            try:
+                new_filename = save_background_image(current_app, uploaded_file)
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), 'error')
+                return redirect(url_for('admin.theming_settings'))
+
+            delete_background_image(current_app, config.theming_background)
+            config.theming_background = new_filename
+            background_url = url_for('main.theming_background', filename=config.theming_background)
+
+        config.theming_enabled = enable_theming and bool(config.theming_background)
+        db.session.commit()
+
+        if enable_theming and not config.theming_background:
+            flash('Upload a background image before enabling theming.', 'error')
+        else:
+            flash('Theming settings updated successfully.', 'success')
+
+        return redirect(url_for('admin.theming_settings'))
+
+    theming_folder = get_theming_folder(current_app)
+
+    return render_template(
+        'admin/theming.html',
+        config=config,
+        background_url=background_url,
+        theming_folder=theming_folder
+    )
 
 @admin_bp.route('/export/chapter/<int:chapter_id>')
 def export_chapter(chapter_id):

@@ -22,7 +22,7 @@ sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
 # 2. Sync version to __version__.py
 echo "🔄 Syncing version information..."
-python scripts/sync_version.py "$RELEASE_NAME"
+python3 scripts/sync_version.py "$RELEASE_NAME"
 
 # 3. Run tests
 echo "🧪 Running tests..."

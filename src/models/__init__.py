@@ -117,3 +117,27 @@ class ReviewHistory(db.Model):
             'reviewed_at': self.reviewed_at.isoformat(),
             'card_id': self.card_id
         }
+
+
+class AppConfig(db.Model):
+    __tablename__ = 'app_config'
+
+    id = db.Column(db.Integer, primary_key=True, default=1)
+    theming_enabled = db.Column(db.Boolean, default=False)
+    theming_background = db.Column(db.String(255))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    @classmethod
+    def get_config(cls):
+        config = db.session.get(cls, 1)
+        if config is None:
+            config = cls(id=1)
+            db.session.add(config)
+            db.session.commit()
+        return config
+
+    def to_dict(self):
+        return {
+            'theming_enabled': self.theming_enabled,
+            'theming_background': self.theming_background
+        }
