@@ -7,7 +7,7 @@
 ## 📋 Release Notes
 
 ### v1.3.0 - Recap Mode (2025-11-10)
-- 🔄 **Recap Mode**: Recap mode allows you to recap the vocabulary you messed up during the last session (same direction). It shows you the cards you answered incorrectly and lets you review them again. You will be asked if you want to recap the cards after each session with wrong answers. 
+- 🔄 **Recap Mode**: Recap mode allows you to recap the vocabulary you messed up during the last session (same direction). It shows you the cards you answered incorrectly and lets you review them again. You will be asked if you want to recap the cards after each session with wrong answers.
 
 ### v1.2.0 - Theming (2025-11-08)
 - 🎨 **Custom Backgrounds**: Upload your own background images for a personalized experience. The background will be displayed on the dashboard and chapter pages. You can upload and activate the background image in the Admin page.
