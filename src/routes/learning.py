@@ -84,18 +84,27 @@ def create_session(chapter_id):
         return redirect(url_for('chapters.view_chapter', chapter_id=chapter_id))
     
     # Build session cards list with presentation mode for combined mode
+    # We also pre-compute and persist the direction per card so recap mode can reuse it
     session_cards = []
     for card in queue:
-        if context_mode == 'combined' and card.context_hint and card.example_sentence:
-            # Add card twice: once as context question, once as word question
-            session_cards.append({'card_id': card.id, 'mode': 'context'})
-            session_cards.append({'card_id': card.id, 'mode': 'word'})
-        else:
-            # Add card once with appropriate mode
-            if context_mode == 'context':
-                session_cards.append({'card_id': card.id, 'mode': 'context'})
+        def build_word_entry(c):
+            if direction == 'random':
+                chosen = SRSService.get_random_direction()
             else:
-                session_cards.append({'card_id': card.id, 'mode': 'word'})
+                chosen = direction
+            return {'card_id': c.id, 'mode': 'word', 'direction': chosen}
+        def build_context_entry(c):
+            # Context questions always use logical 'context' direction marker
+            return {'card_id': c.id, 'mode': 'context', 'direction': 'context'}
+
+        if context_mode == 'combined' and card.context_hint and card.example_sentence:
+            session_cards.append(build_context_entry(card))
+            session_cards.append(build_word_entry(card))
+        else:
+            if context_mode == 'context':
+                session_cards.append(build_context_entry(card))
+            else:
+                session_cards.append(build_word_entry(card))
     
     # Shuffle the session cards for combined mode
     if context_mode == 'combined':
@@ -105,7 +114,6 @@ def create_session(chapter_id):
     session['learning_session'] = {
         'chapter_id': chapter_id,
         'cards': session_cards,
-        'direction': direction,
         'context_mode': context_mode,
         'current_index': 0,
         'correct_count': 0,
@@ -136,9 +144,9 @@ def review_card():
     
     card = VocabularyCard.query.get_or_404(card_id)
     
-    # Determine direction and question/answer based on presentation mode
+    # Determine direction and question/answer based on presentation mode / stored direction
+    stored_direction = card_info.get('direction')
     if presentation_mode == 'context':
-        # Context mode: source_word + context_hint → example_sentence
         question = card.source_word
         answer = card.example_sentence
         question_lang = card.chapter.source_language
@@ -146,23 +154,26 @@ def review_card():
         review_direction = 'context'
         show_context_hint = True
     else:
-        # Word mode: regular word translation
-        if session_data['direction'] == 'random':
-            review_direction = random.choice(['source_to_target', 'target_to_source'])
-        else:
-            review_direction = session_data['direction']
+        # Per-card direction should always be present; fallback to source_to_target as safe default
+        if stored_direction is None:
+            stored_direction = 'source_to_target'
         
+        review_direction = stored_direction
         if review_direction == 'source_to_target':
             question = card.source_word
             answer = card.target_word
             question_lang = card.chapter.source_language
             answer_lang = card.chapter.target_language
-        else:
+        elif review_direction == 'target_to_source':
             question = card.target_word
             answer = card.source_word
             question_lang = card.chapter.target_language
             answer_lang = card.chapter.source_language
-        
+        else:  # Unexpected token, default safe
+            question = card.source_word
+            answer = card.target_word
+            question_lang = card.chapter.source_language
+            answer_lang = card.chapter.target_language
         show_context_hint = False
     
     return render_template('learning/review.html',
@@ -193,9 +204,8 @@ def submit_answer():
     session_data = session['learning_session']
     is_recap = session_data.get('is_recap', False)
     
-    # Only update SRS data for word mode and non-recap sessions
-    # Context mode is for practice only and doesn't affect Leitner progression
-    # Recap sessions also don't affect SRS
+    # Only update SRS data for word mode and non-recap sessions.
+    # Context mode and recap sessions never impact SRS scheduling.
     if direction != 'context' and not is_recap:
         # Update SRS data
         card.update_srs(correct)
@@ -214,14 +224,15 @@ def submit_answer():
     if correct:
         session_data['correct_count'] += 1
     else:
-        # Track wrong cards for recap mode (only for non-recap sessions)
-        if not is_recap:
-            card_info = session_data['cards'][session_data['current_index']]
-            session_data['wrong_cards'].append({
-                'card_id': card_id,
-                'direction': direction,
-                'mode': card_info['mode']
-            })
+        # Track wrong cards for recap mode (even during recap to allow multiple rounds)
+        card_info = session_data['cards'][session_data['current_index']]
+        # Ensure we keep original per-card direction if available
+        wrong_direction = card_info.get('direction', direction)
+        session_data['wrong_cards'].append({
+            'card_id': int(card_id),  # Explicit int cast for type safety
+            'direction': wrong_direction,
+            'mode': card_info['mode']
+        })
     
     session_data['current_index'] += 1
     session['learning_session'] = session_data
@@ -241,9 +252,10 @@ def session_complete():
     # Calculate session stats
     accuracy = round((session_data['correct_count'] / session_data['total_count']) * 100, 1)
     wrong_count = len(session_data.get('wrong_cards', []))
-    
-    # Store wrong cards data temporarily for recap feature
-    # Don't clear it yet - we need it for potential recap session
+
+    # If no wrong cards remain we can safely clear the session immediately
+    if wrong_count == 0:
+        session.pop('learning_session', None)
     
     return render_template('learning/complete.html',
                          chapter=chapter,
@@ -281,14 +293,13 @@ def start_recap(chapter_id):
     # Create new session with wrong cards - maintaining their original direction and mode
     session['learning_session'] = {
         'chapter_id': chapter_id,
-        'cards': wrong_cards,
-        'direction': session_data.get('direction', 'random'),
+        'cards': wrong_cards,  # Each entry already contains its own direction
         'context_mode': session_data.get('context_mode', 'combined'),
         'current_index': 0,
         'correct_count': 0,
         'total_count': len(wrong_cards),
         'wrong_cards': [],
-        'is_recap': True  # Mark as recap session
+        'is_recap': True
     }
     
     flash(f'Recapping {len(wrong_cards)} card(s) you got wrong', 'info')
@@ -314,41 +325,34 @@ def api_submit_answer():
     
     card = VocabularyCard.query.get_or_404(card_id)
     
-    # Update session data
+    # Update session data if active
     if 'learning_session' in session:
         session_data = session['learning_session']
         is_recap = session_data.get('is_recap', False)
-        
+
         # Only update SRS data for word mode and non-recap sessions
-        # Context mode is for practice only and doesn't affect Leitner progression
-        # Recap sessions also don't affect SRS
         if direction != 'context' and not is_recap:
-            # Update SRS data
             card.update_srs(correct)
-            
-            # Record review history
             review = ReviewHistory(
                 card_id=card.id,
                 correct=correct,
                 direction=direction
             )
-            
             db.session.add(review)
             db.session.commit()
-        
-        # Track results
+
+        # Track results & wrong answers
         if correct:
             session_data['correct_count'] += 1
         else:
-            # Track wrong cards for recap mode (only for non-recap sessions)
-            if not is_recap:
-                card_info = session_data['cards'][session_data['current_index']]
-                session_data['wrong_cards'].append({
-                    'card_id': card_id,
-                    'direction': direction,
-                    'mode': card_info['mode']
-                })
-        
+            card_info = session_data['cards'][session_data['current_index']]
+            wrong_direction = card_info.get('direction', direction)
+            session_data['wrong_cards'].append({
+                'card_id': int(card_id),  # Explicit int cast for type safety
+                'direction': wrong_direction,
+                'mode': card_info['mode']
+            })
+
         session_data['current_index'] += 1
         session['learning_session'] = session_data
     

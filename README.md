@@ -6,6 +6,9 @@
 
 ## 📋 Release Notes
 
+### v1.3.1 - Improve Code Quality (2025-11-10)
+- 🧹 **Code Quality**: Removed redundant session-level direction storage, improved type safety with explicit int casts for card IDs.
+
 ### v1.3.0 - Recap Mode (2025-11-10)
 - 🔄 **Recap Mode**: Recap mode allows you to recap the vocabulary you messed up during the last session (same direction). It shows you the cards you answered incorrectly and lets you review them again. You will be asked if you want to recap the cards after each session with wrong answers.
 

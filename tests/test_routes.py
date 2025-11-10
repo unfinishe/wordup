@@ -584,7 +584,7 @@ def test_recap_session_creation(client, app, sample_chapter):
         assert learning_session is not None
         assert learning_session['is_recap'] is True
         assert len(learning_session['cards']) == 1
-        assert learning_session['cards'][0]['card_id'] == str(card1_id)
+        assert learning_session['cards'][0]['card_id'] == card1_id  # Now stored as int
 
 
 def test_recap_session_does_not_update_srs(client, app, sample_chapter):
@@ -686,4 +686,89 @@ def test_end_session_clears_session_data(client, app, sample_chapter):
     # Verify session cleared
     with client.session_transaction() as sess:
         assert 'learning_session' not in sess
+
+
+def test_recap_multiple_rounds(client, app, sample_chapter):
+    """Wrong answers in recap should trigger another recap offer until resolved."""
+    from src.models import VocabularyCard, db
+
+    with app.app_context():
+        # Create two cards
+        c1 = VocabularyCard(source_word="Haus", target_word="House", chapter_id=sample_chapter.id)
+        c2 = VocabularyCard(source_word="Baum", target_word="Tree", chapter_id=sample_chapter.id)
+        db.session.add_all([c1, c2])
+        db.session.commit()
+        id1, id2 = c1.id, c2.id
+
+    # Start initial session (word mode, fixed direction)
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    })
+
+    # Mark first card wrong, second correct
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    client.post('/learn/api/answer', json={'card_id': id1, 'correct': False, 'direction': 'source_to_target'})
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 1
+    client.post('/learn/api/answer', json={'card_id': id2, 'correct': True, 'direction': 'source_to_target'})
+
+    # Complete and check recap option present
+    r1 = client.get('/learn/session-complete')
+    assert b'Yes, Recap Now' in r1.data
+
+    # Start recap (only wrong card remains)
+    client.get(f'/learn/chapter/{sample_chapter.id}/recap')
+
+    # In recap, answer wrong again to force another recap
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    client.post('/learn/api/answer', json={'card_id': id1, 'correct': False, 'direction': 'source_to_target'})
+    r2 = client.get('/learn/session-complete')
+    assert b'Yes, Recap Now' in r2.data  # Still offered
+
+    # Recap again and answer correctly this time
+    client.get(f'/learn/chapter/{sample_chapter.id}/recap')
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    client.post('/learn/api/answer', json={'card_id': id1, 'correct': True, 'direction': 'source_to_target'})
+    r3 = client.get('/learn/session-complete')
+    assert b'Yes, Recap Now' not in r3.data  # No more recap offer
+
+
+def test_recap_preserves_direction_random_mode(client, app, sample_chapter):
+    """Recap should reuse original per-card direction even if initial session used random."""
+    from src.models import VocabularyCard, db
+
+    with app.app_context():
+        card = VocabularyCard(source_word="links", target_word="left", chapter_id=sample_chapter.id)
+        db.session.add(card)
+        db.session.commit()
+        cid = card.id
+
+    # Start session with random direction
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'random',
+        'limit': 10
+    })
+
+    # Peek stored direction for the first card
+    with client.session_transaction() as sess:
+        original_dir = sess['learning_session']['cards'][0]['direction']
+        sess['learning_session']['current_index'] = 0
+
+    # Force wrong answer
+    client.post('/learn/api/answer', json={'card_id': cid, 'correct': False, 'direction': original_dir})
+    client.get('/learn/session-complete')
+    client.get(f'/learn/chapter/{sample_chapter.id}/recap')
+
+    # In recap, verify direction reused
+    with client.session_transaction() as sess:
+        recap_dir = sess['learning_session']['cards'][0]['direction']
+    assert recap_dir == original_dir
 
