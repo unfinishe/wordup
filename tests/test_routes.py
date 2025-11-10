@@ -243,17 +243,30 @@ def test_word_mode_review_updates_srs(client, app, sample_chapter):
         db.session.commit()
         original_box_level = card.box_level
         card_id = card.id
+    
+    # Create a session first (API requires session context)
+    with client.session_transaction() as sess:
+        sess['learning_session'] = {
+            'chapter_id': sample_chapter.id,
+            'cards': [{'card_id': card_id, 'mode': 'word'}],
+            'current_index': 0,
+            'correct_count': 0,
+            'total_count': 1,
+            'wrong_cards': [],
+            'is_recap': False
+        }
         
-        # Submit a word mode answer via API
-        response = client.post('/learn/api/answer', 
-            json={
-                'card_id': card_id,
-                'correct': True,
-                'direction': 'source_to_target'
-            })
-        
-        assert response.status_code == 200
-        
+    # Submit a word mode answer via API
+    response = client.post('/learn/api/answer', 
+        json={
+            'card_id': card_id,
+            'correct': True,
+            'direction': 'source_to_target'
+        })
+    
+    assert response.status_code == 200
+    
+    with app.app_context():
         # Check that SRS data WAS updated
         card = VocabularyCard.query.get(card_id)
         assert card.box_level > original_box_level
@@ -429,3 +442,248 @@ def test_admin_theming_remove_background(client, app):
         assert config.theming_enabled is False
         assert config.theming_background is None
         assert not os.path.exists(background_path)
+
+
+# Recap Mode Tests
+
+def test_session_complete_shows_recap_option_when_wrong_cards(client, app, sample_chapter):
+    """Test that session complete page shows recap option when there are wrong cards."""
+    from src.models import VocabularyCard, db
+    
+    with app.app_context():
+        # Create a card
+        card = VocabularyCard(
+            source_word="Hallo",
+            target_word="Hello",
+            chapter_id=sample_chapter.id
+        )
+        db.session.add(card)
+        db.session.commit()
+        card_id = card.id
+        
+    # Create a session
+    response = client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    }, follow_redirects=False)
+    
+    # Submit wrong answer
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card_id),
+        'correct': 'false',
+        'direction': 'source_to_target'
+    })
+    
+    # Check session complete page
+    response = client.get('/learn/session-complete')
+    assert response.status_code == 200
+    assert b'Want to recap your mistakes?' in response.data
+    assert b'Yes, Recap Now' in response.data
+
+
+def test_session_complete_no_recap_option_when_all_correct(client, app, sample_chapter):
+    """Test that session complete page doesn't show recap option when all answers correct."""
+    from src.models import VocabularyCard, db
+    
+    with app.app_context():
+        # Create a card
+        card = VocabularyCard(
+            source_word="Hallo",
+            target_word="Hello",
+            chapter_id=sample_chapter.id
+        )
+        db.session.add(card)
+        db.session.commit()
+        card_id = card.id
+        
+    # Create a session
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    }, follow_redirects=False)
+    
+    # Submit correct answer
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card_id),
+        'correct': 'true',
+        'direction': 'source_to_target'
+    })
+    
+    # Check session complete page
+    response = client.get('/learn/session-complete')
+    assert response.status_code == 200
+    assert b'Want to recap your mistakes?' not in response.data
+    assert b'Study More Cards' in response.data
+
+
+def test_recap_session_creation(client, app, sample_chapter):
+    """Test that recap session is created with wrong cards only."""
+    from src.models import VocabularyCard, db
+    
+    with app.app_context():
+        # Create two cards
+        card1 = VocabularyCard(
+            source_word="Hallo",
+            target_word="Hello",
+            chapter_id=sample_chapter.id
+        )
+        card2 = VocabularyCard(
+            source_word="Tschüss",
+            target_word="Goodbye",
+            chapter_id=sample_chapter.id
+        )
+        db.session.add_all([card1, card2])
+        db.session.commit()
+        card1_id = card1.id
+        card2_id = card2.id
+        
+    # Create a session
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    }, follow_redirects=False)
+    
+    # Submit answers: card1 wrong, card2 correct
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card1_id),
+        'correct': 'false',
+        'direction': 'source_to_target'
+    })
+    
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 1
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card2_id),
+        'correct': 'true',
+        'direction': 'source_to_target'
+    })
+    
+    # Start recap session
+    response = client.get(f'/learn/chapter/{sample_chapter.id}/recap', follow_redirects=False)
+    assert response.status_code == 302
+    
+    # Verify session contains only wrong card
+    with client.session_transaction() as sess:
+        learning_session = sess.get('learning_session')
+        assert learning_session is not None
+        assert learning_session['is_recap'] is True
+        assert len(learning_session['cards']) == 1
+        assert learning_session['cards'][0]['card_id'] == str(card1_id)
+
+
+def test_recap_session_does_not_update_srs(client, app, sample_chapter):
+    """Test that recap sessions don't update SRS data."""
+    from src.models import VocabularyCard, ReviewHistory, db
+    from datetime import datetime, timezone
+    
+    with app.app_context():
+        # Create a card
+        card = VocabularyCard(
+            source_word="Hallo",
+            target_word="Hello",
+            chapter_id=sample_chapter.id,
+            box_level=2
+        )
+        db.session.add(card)
+        db.session.commit()
+        card_id = card.id
+        original_box_level = card.box_level
+        original_next_review = card.next_review
+        
+    # Create a regular session and get wrong answer
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    }, follow_redirects=False)
+    
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card_id),
+        'correct': 'false',
+        'direction': 'source_to_target'
+    })
+    
+    # Start recap session
+    client.get(f'/learn/chapter/{sample_chapter.id}/recap', follow_redirects=False)
+    
+    # Get card box level after wrong answer in regular session
+    with app.app_context():
+        card = VocabularyCard.query.get(card_id)
+        box_level_after_regular = card.box_level
+        
+    # Submit correct answer in recap session
+    with client.session_transaction() as sess:
+        sess['learning_session']['current_index'] = 0
+        sess['learning_session']['is_recap'] = True
+    
+    client.post('/learn/answer', data={
+        'card_id': str(card_id),
+        'correct': 'true',
+        'direction': 'source_to_target'
+    })
+    
+    # Verify box level didn't change from recap session
+    with app.app_context():
+        card = VocabularyCard.query.get(card_id)
+        assert card.box_level == box_level_after_regular
+        
+        # Verify no review history was created for recap session
+        # Count should be 1 (from regular session only)
+        review_count = ReviewHistory.query.filter_by(card_id=card_id).count()
+        assert review_count == 1
+
+
+def test_end_session_clears_session_data(client, app, sample_chapter):
+    """Test that ending a session clears session data."""
+    from src.models import VocabularyCard, db
+    
+    with app.app_context():
+        # Create a card
+        card = VocabularyCard(
+            source_word="Hallo",
+            target_word="Hello",
+            chapter_id=sample_chapter.id
+        )
+        db.session.add(card)
+        db.session.commit()
+        
+    # Create a session
+    client.post(f'/learn/chapter/{sample_chapter.id}/session', data={
+        'context_mode': 'word',
+        'practice_mode': 'all_cards',
+        'direction': 'source_to_target',
+        'limit': 10
+    }, follow_redirects=False)
+    
+    # Verify session exists
+    with client.session_transaction() as sess:
+        assert 'learning_session' in sess
+    
+    # End session
+    response = client.get('/learn/session/end', follow_redirects=False)
+    assert response.status_code == 302
+    
+    # Verify session cleared
+    with client.session_transaction() as sess:
+        assert 'learning_session' not in sess
+

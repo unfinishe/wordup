@@ -109,7 +109,9 @@ def create_session(chapter_id):
         'context_mode': context_mode,
         'current_index': 0,
         'correct_count': 0,
-        'total_count': len(session_cards)
+        'total_count': len(session_cards),
+        'wrong_cards': [],  # Track wrong cards for recap mode
+        'is_recap': False   # Flag to identify recap sessions
     }
     
     return redirect(url_for('learning.review_card'))
@@ -188,9 +190,13 @@ def submit_answer():
     correct = request.form.get('correct') == 'true'
     direction = request.form.get('direction')
     
-    # Only update SRS data for word mode, not for context mode
+    session_data = session['learning_session']
+    is_recap = session_data.get('is_recap', False)
+    
+    # Only update SRS data for word mode and non-recap sessions
     # Context mode is for practice only and doesn't affect Leitner progression
-    if direction != 'context':
+    # Recap sessions also don't affect SRS
+    if direction != 'context' and not is_recap:
         # Update SRS data
         card.update_srs(correct)
         
@@ -205,9 +211,18 @@ def submit_answer():
         db.session.commit()
     
     # Update session data
-    session_data = session['learning_session']
     if correct:
         session_data['correct_count'] += 1
+    else:
+        # Track wrong cards for recap mode (only for non-recap sessions)
+        if not is_recap:
+            card_info = session_data['cards'][session_data['current_index']]
+            session_data['wrong_cards'].append({
+                'card_id': card_id,
+                'direction': direction,
+                'mode': card_info['mode']
+            })
+    
     session_data['current_index'] += 1
     session['learning_session'] = session_data
     
@@ -225,15 +240,66 @@ def session_complete():
     
     # Calculate session stats
     accuracy = round((session_data['correct_count'] / session_data['total_count']) * 100, 1)
+    wrong_count = len(session_data.get('wrong_cards', []))
     
-    # Clear session
-    session.pop('learning_session', None)
+    # Store wrong cards data temporarily for recap feature
+    # Don't clear it yet - we need it for potential recap session
     
     return render_template('learning/complete.html',
                          chapter=chapter,
                          correct_count=session_data['correct_count'],
                          total_count=session_data['total_count'],
-                         accuracy=accuracy)
+                         accuracy=accuracy,
+                         wrong_count=wrong_count,
+                         has_wrong_cards=wrong_count > 0)
+
+@learning_bp.route('/chapter/<int:chapter_id>/recap')
+def start_recap(chapter_id):
+    """Start a recap session with wrong cards from previous session"""
+    if 'learning_session' not in session:
+        flash('No previous session found for recap', 'error')
+        return redirect(url_for('chapters.view_chapter', chapter_id=chapter_id))
+    
+    session_data = session['learning_session']
+    
+    # Verify chapter matches
+    if session_data.get('chapter_id') != chapter_id:
+        flash('Session chapter mismatch', 'error')
+        return redirect(url_for('chapters.view_chapter', chapter_id=chapter_id))
+    
+    wrong_cards = session_data.get('wrong_cards', [])
+    
+    if not wrong_cards:
+        flash('No wrong cards to recap', 'info')
+        # Clear session and redirect
+        session.pop('learning_session', None)
+        return redirect(url_for('chapters.view_chapter', chapter_id=chapter_id))
+    
+    # Create new recap session with wrong cards
+    chapter = Chapter.query.get_or_404(chapter_id)
+    
+    # Create new session with wrong cards - maintaining their original direction and mode
+    session['learning_session'] = {
+        'chapter_id': chapter_id,
+        'cards': wrong_cards,
+        'direction': session_data.get('direction', 'random'),
+        'context_mode': session_data.get('context_mode', 'combined'),
+        'current_index': 0,
+        'correct_count': 0,
+        'total_count': len(wrong_cards),
+        'wrong_cards': [],
+        'is_recap': True  # Mark as recap session
+    }
+    
+    flash(f'Recapping {len(wrong_cards)} card(s) you got wrong', 'info')
+    return redirect(url_for('learning.review_card'))
+
+@learning_bp.route('/session/end')
+def end_session():
+    """End session and clear session data"""
+    session.pop('learning_session', None)
+    flash('Session ended', 'info')
+    return redirect(url_for('main.dashboard'))
 
 @learning_bp.route('/api/answer', methods=['POST'])
 def api_submit_answer():
@@ -248,27 +314,41 @@ def api_submit_answer():
     
     card = VocabularyCard.query.get_or_404(card_id)
     
-    # Only update SRS data for word mode, not for context mode
-    # Context mode is for practice only and doesn't affect Leitner progression
-    if direction != 'context':
-        # Update SRS data
-        card.update_srs(correct)
-        
-        # Record review history
-        review = ReviewHistory(
-            card_id=card.id,
-            correct=correct,
-            direction=direction
-        )
-        
-        db.session.add(review)
-        db.session.commit()
-    
     # Update session data
     if 'learning_session' in session:
         session_data = session['learning_session']
+        is_recap = session_data.get('is_recap', False)
+        
+        # Only update SRS data for word mode and non-recap sessions
+        # Context mode is for practice only and doesn't affect Leitner progression
+        # Recap sessions also don't affect SRS
+        if direction != 'context' and not is_recap:
+            # Update SRS data
+            card.update_srs(correct)
+            
+            # Record review history
+            review = ReviewHistory(
+                card_id=card.id,
+                correct=correct,
+                direction=direction
+            )
+            
+            db.session.add(review)
+            db.session.commit()
+        
+        # Track results
         if correct:
             session_data['correct_count'] += 1
+        else:
+            # Track wrong cards for recap mode (only for non-recap sessions)
+            if not is_recap:
+                card_info = session_data['cards'][session_data['current_index']]
+                session_data['wrong_cards'].append({
+                    'card_id': card_id,
+                    'direction': direction,
+                    'mode': card_info['mode']
+                })
+        
         session_data['current_index'] += 1
         session['learning_session'] = session_data
     

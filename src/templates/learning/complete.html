@@ -43,7 +43,31 @@
             {% endif %}
         </div>
 
+        {% if has_wrong_cards %}
+        <div class="recap-offer">
+            <div class="recap-header">
+                <i class="fas fa-redo-alt"></i>
+                <h3>Want to recap your mistakes?</h3>
+            </div>
+            <p class="recap-description">
+                You got <strong>{{ wrong_count }}</strong> card{% if wrong_count != 1 %}s{% endif %} wrong. 
+                Recap them now to improve your retention!
+            </p>
+            <div class="recap-actions">
+                <a href="{{ url_for('learning.start_recap', chapter_id=chapter.id) }}" 
+                   class="btn btn-warning btn-large">
+                    <i class="fas fa-redo"></i> Yes, Recap Now
+                </a>
+                <a href="{{ url_for('learning.end_session') }}" 
+                   class="btn btn-outline">
+                    <i class="fas fa-times"></i> No, Thanks
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="completion-actions">
+            {% if not has_wrong_cards %}
             <a href="{{ url_for('learning.start_session', chapter_id=chapter.id) }}" 
                class="btn btn-primary">
                 <i class="fas fa-redo"></i> Study More Cards
@@ -56,6 +80,12 @@
                class="btn btn-outline">
                 <i class="fas fa-home"></i> Back to Dashboard
             </a>
+            {% else %}
+            <a href="{{ url_for('learning.end_session') }}" 
+               class="btn btn-text">
+                <i class="fas fa-sign-out-alt"></i> Or finish this session
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -175,6 +205,78 @@
     flex-wrap: wrap;
 }
 
+.recap-offer {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.recap-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.recap-header i {
+    font-size: 1.5rem;
+    color: #ff9800;
+}
+
+.recap-header h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0;
+}
+
+.recap-description {
+    font-size: 1.125rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.recap-description strong {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.recap-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-large {
+    padding: 0.875rem 2rem;
+    font-size: 1.125rem;
+}
+
+.btn-warning {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #f57c00;
+}
+
+.btn-text {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.btn-text:hover {
+    color: var(--text-color);
+    background: transparent;
+}
+
 @media (max-width: 768px) {
     .completion-card {
         padding: 2rem 1rem;
@@ -190,6 +292,10 @@
     }
     
     .completion-actions {
+        flex-direction: column;
+    }
+    
+    .recap-actions {
         flex-direction: column;
     }
 }
