@@ -28,7 +28,7 @@
 - 📚 **Complete Leitner SRS implementation** with 5-box spaced repetition system
 - 🌐 **Multi-language support** for any language pair combinations
 - 📊 **Comprehensive progress tracking** with success rates and statistics
-- 📥📤 **Data management** with JSON/ZIP export and import functionality
+- 📥 **Data management** with JSON/ZIP export and import functionality
 - 🐳 **Docker support** with production-ready containerization
 - 🔧 **Reverse proxy compatibility** for nginx and other proxy servers
 - 📱 **Responsive design** optimized for desktop and mobile devices
